@@ -3,19 +3,28 @@ import useData from '../components/useData';
 import KpiCard from '../components/KpiCard';
 import SectionCard from '../components/SectionCard';
 import StatusBadge from '../components/StatusBadge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 
 const fmt$ = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmtPct = n => n == null ? '—' : Number(n).toFixed(1) + '%';
 
-const TABS = ['Overview', 'Grant List', 'Compliance', 'Lifecycle'];
+const TABS = ['Overview', 'Grant List', 'Compliance', 'Lifecycle', 'Burn Rate'];
+
+const BURN_COLOR = {
+  OVER_BURNING:  '#e53e3e',
+  UNDER_BURNING: '#3182ce',
+  ON_TRACK:      '#38a169',
+  CLOSED:        '#718096',
+};
 
 export default function Grants() {
   const [tab, setTab] = useState('Overview');
-  const { data: kpis, loading: kL } = useData('/grants/kpis');
-  const { data: list, loading: lL } = useData('/grants');
-  const { data: comp, loading: cL } = useData('/grants/compliance');
-  const { data: life, loading: liL } = useData('/grants/lifecycle');
+  const { data: kpis,     loading: kL  } = useData('/grants/kpis');
+  const { data: list,     loading: lL  } = useData('/grants');
+  const { data: comp,     loading: cL  } = useData('/grants/compliance');
+  const { data: life,     loading: liL } = useData('/grants/lifecycle');
+  const { data: burnRate, loading: brL } = useData('/grants/burn-rate');
 
   const k = kpis || {};
 
@@ -166,6 +175,70 @@ export default function Grants() {
             </table>
           )}
         </SectionCard>
+      )}
+
+      {tab === 'Burn Rate' && (
+        <div>
+          <SectionCard title="Grant Spend % vs Time Elapsed % (Burn Rate Analysis)">
+            {brL ? <div className="loading">Loading…</div> : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={(burnRate || []).map(g => ({
+                    name: (g.grant_number || '').split('-').slice(0,2).join('-'),
+                    'Spend %': Number(g.spend_pct || 0),
+                    'Time %':  Number(g.time_elapsed_pct || 0),
+                  }))}
+                  margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
+                >
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tickFormatter={v => v + '%'} tick={{ fontSize: 11 }} domain={[0, 120]} />
+                  <Tooltip formatter={v => fmtPct(v)} />
+                  <Legend />
+                  <Bar dataKey="Spend %" fill="#e53e3e" radius={[3,3,0,0]} />
+                  <Bar dataKey="Time %"  fill="#1a5c9e" radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Burn Rate Detail by Grant">
+            {brL ? <div className="loading">Loading…</div> : (
+              <table className="data-table">
+                <thead><tr>
+                  <th>Grant #</th><th>Title</th><th>Grantor</th><th>Award</th>
+                  <th>Spend %</th><th>Time Elapsed %</th><th>Variance</th><th>Burn Status</th>
+                </tr></thead>
+                <tbody>
+                  {(burnRate || []).map(g => {
+                    const variance = Number(g.spend_pct || 0) - Number(g.time_elapsed_pct || 0);
+                    return (
+                      <tr key={g.grant_id}>
+                        <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{g.grant_number}</td>
+                        <td style={{ fontWeight: 500, maxWidth: 180 }}>{g.grant_title}</td>
+                        <td>{g.grantor_agency}</td>
+                        <td style={{ textAlign: 'right' }}>{fmt$(g.award_amount)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtPct(g.spend_pct)}</td>
+                        <td style={{ textAlign: 'right' }}>{fmtPct(g.time_elapsed_pct)}</td>
+                        <td style={{ textAlign: 'right', color: variance > 0 ? 'var(--red)' : 'var(--green)' }}>
+                          {variance > 0 ? '+' : ''}{fmtPct(variance)}
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                            background: (BURN_COLOR[g.burn_status] || '#888') + '22',
+                            color: BURN_COLOR[g.burn_status] || '#888',
+                          }}>
+                            {g.burn_status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </SectionCard>
+        </div>
       )}
     </div>
   );

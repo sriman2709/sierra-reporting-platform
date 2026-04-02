@@ -13,6 +13,7 @@ router.get('/',            ...auth, wrap(() => GrantsService.getAll()));
 router.get('/kpis',        ...auth, wrap(() => GrantsService.getKPIs()));
 router.get('/compliance',  ...auth, wrap(() => GrantsService.getCompliance()));
 router.get('/lifecycle',   ...auth, wrap(() => GrantsService.getLifecycle()));
+router.get('/burn-rate',   ...auth, wrap(() => GrantsService.getBurnRate()));
 router.get('/:id',         ...auth, wrap(req  => GrantsService.getById(req.params.id)));
 
 export default router;
