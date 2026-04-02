@@ -16,15 +16,15 @@ export default function Subawards() {
   const { data: monitor,  loading: mL } = useData('/subawards/monitoring');
   const { data: correct,  loading: cL } = useData('/subawards/corrective');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Total Subawards"   value={k.CNT ?? k.total_subawards ?? '…'} />
-        <KpiCard label="Total Obligated"   value={fmt$(k.TOTAL ?? k.total_subaward_amount)} color="green" />
-        <KpiCard label="FFATA Reportable"  value={k.FFATA_REPORTABLE ?? k.ffata_reportable ?? '…'} color="yellow" />
-        <KpiCard label="Active Subawards"  value={k.ACTIVE_SUBAWARDS ?? k.active_subawards ?? '…'} color="green" />
+        <KpiCard label="Total Subawards"  value={k.total_subawards      ?? '…'} />
+        <KpiCard label="Total Obligated"  value={fmt$(k.total_subaward_amount)} color="green" />
+        <KpiCard label="FFATA Reportable" value={k.ffata_reportable    ?? '…'} color="yellow" />
+        <KpiCard label="Active Subawards" value={k.active_subawards    ?? '…'} color="green" />
       </div>
 
       <div className="tabs">

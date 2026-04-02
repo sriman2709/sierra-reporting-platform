@@ -18,16 +18,16 @@ export default function Audit() {
   const { data: log,       loading: lL } = useData('/audit/log');
   const { data: kpis,      loading: kL } = useData('/audit/kpis');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Audit Ready"      value={k.READY     ?? k.ready     ?? '…'} color="green" />
-        <KpiCard label="In Remediation"   value={k.IN_REMEDIATION ?? k.in_remediation ?? '…'} color="yellow" />
-        <KpiCard label="Not Ready"        value={k.NOT_READY ?? k.not_ready ?? '…'} color="red" />
-        <KpiCard label="Open Findings"    value={k.TOTAL_OPEN_FINDINGS ?? k.total_open_findings ?? '…'} color="orange" />
-        <KpiCard label="High-Risk Subrecipients" value={k.TOTAL_HIGH_RISK ?? k.total_high_risk ?? '…'} color="red" />
+        <KpiCard label="Audit Ready"             value={k.ready              ?? '…'} color="green" />
+        <KpiCard label="In Remediation"          value={k.in_remediation     ?? '…'} color="yellow" />
+        <KpiCard label="Not Ready"               value={k.not_ready          ?? '…'} color="red" />
+        <KpiCard label="Open Findings"           value={k.total_open_findings ?? '…'} color="orange" />
+        <KpiCard label="High-Risk Subrecipients" value={k.total_high_risk    ?? '…'} color="red" />
       </div>
 
       <div className="tabs">

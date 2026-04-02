@@ -5,6 +5,7 @@ const router = Router();
 const auth = [authenticate, authorize('audit')];
 const wrap = fn => async (req, res) => { try { res.json(await fn(req,res)); } catch(e){ res.status(500).json({error:e.message}); }};
 router.get('/',          ...auth, wrap(() => AuditService.getReadiness()));
+router.get('/readiness', ...auth, wrap(() => AuditService.getReadiness()));
 router.get('/kpis',      ...auth, wrap(() => AuditService.getKPIs()));
 router.get('/evidence',  ...auth, wrap(() => AuditService.getEvidence()));
 router.get('/log',       ...auth, wrap(() => AuditService.getLog()));

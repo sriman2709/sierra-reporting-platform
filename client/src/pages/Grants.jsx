@@ -17,7 +17,7 @@ export default function Grants() {
   const { data: comp, loading: cL } = useData('/grants/compliance');
   const { data: life, loading: liL } = useData('/grants/lifecycle');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
   // Build status breakdown chart from list
   const statusMap = {};
@@ -32,10 +32,10 @@ export default function Grants() {
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Total Grants"     value={k.CNT ?? k.total_grants ?? '…'} color="" />
-        <KpiCard label="Total Award Value" value={fmt$(k.TOTAL ?? k.total_award_amount)} color="green" />
-        <KpiCard label="Active Grants"     value={k.ACTIVE ?? k.active_grants ?? '…'} color="green" />
-        <KpiCard label="Expiring Soon"     value={k.EXPIRING ?? k.expiring_grants ?? '…'} color="yellow" />
+        <KpiCard label="Total Grants"      value={k.total_grants     ?? '…'} />
+        <KpiCard label="Total Award Value" value={fmt$(k.total_award_amount)}  color="green" />
+        <KpiCard label="Active Grants"     value={k.active_grants    ?? '…'} color="green" />
+        <KpiCard label="Expiring Soon"     value={k.expiring_grants  ?? '…'} color="yellow" />
       </div>
 
       <div className="tabs">

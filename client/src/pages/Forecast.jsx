@@ -17,16 +17,16 @@ export default function Forecast() {
   const { data: entries,   loading: eL } = useData('/forecast/entries');
   const { data: kpis,      loading: kL } = useData('/forecast/kpis');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
-  // Build chart data: original_budget vs forecast_amount by fund
+  // Build chart data grouped by scenario_name (fund_name may be null due to seed data)
   const chartData = (variance || []).reduce((acc, row) => {
-    const key = row.fund_name;
+    const key = row.scenario_name || row.fund_id || 'Unknown';
     const existing = acc.find(d => d.name === key);
     if (existing) {
-      existing.budget    = (existing.budget    || 0) + Number(row.original_budget    || 0);
-      existing.forecast  = (existing.forecast  || 0) + Number(row.forecast_amount    || 0);
-      existing.actuals   = (existing.actuals   || 0) + Number(row.actuals_to_date    || 0);
+      existing.budget   = (existing.budget   || 0) + Number(row.original_budget  || 0);
+      existing.forecast = (existing.forecast || 0) + Number(row.forecast_amount  || 0);
+      existing.actuals  = (existing.actuals  || 0) + Number(row.actuals_to_date  || 0);
     } else {
       acc.push({
         name:     key,
@@ -41,9 +41,9 @@ export default function Forecast() {
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Scenarios"        value={k.SCENARIOS ?? k.total_scenarios ?? '…'} />
-        <KpiCard label="Early Warnings"   value={k.EARLY_WARNINGS ?? k.early_warnings ?? '…'} color="red" />
-        <KpiCard label="Avg Confidence"   value={k.AVG_CONFIDENCE ? fmtPct(k.AVG_CONFIDENCE) : '…'} color="green" />
+        <KpiCard label="Scenarios"      value={k.total_scenarios ?? '…'} />
+        <KpiCard label="Early Warnings" value={k.early_warnings  ?? '…'} color="red" />
+        <KpiCard label="Avg Confidence" value={k.avg_confidence ? fmtPct(k.avg_confidence) : '…'} color="green" />
       </div>
 
       <div className="tabs">
@@ -54,7 +54,7 @@ export default function Forecast() {
 
       {tab === 'Variance Dashboard' && (
         <div>
-          <SectionCard title="Budget vs Forecast vs Actuals by Fund">
+          <SectionCard title="Budget vs Forecast vs Actuals by Scenario">
             {vL ? <div className="loading">Loading…</div> : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>

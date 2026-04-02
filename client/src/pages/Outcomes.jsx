@@ -18,21 +18,21 @@ export default function Outcomes() {
   const { data: cost,      loading: cL } = useData('/outcomes/cost');
   const { data: kpis,      loading: kL } = useData('/outcomes/kpis');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
   const statusData = [
-    { name: 'On Track',   value: Number(k.ON_TRACK ?? k.on_track ?? 0), fill: '#38a169' },
-    { name: 'At Risk',    value: Number(k.AT_RISK   ?? k.at_risk   ?? 0), fill: '#d69e2e' },
-    { name: 'Off Track',  value: Number(k.OFF_TRACK ?? 0),               fill: '#e53e3e' },
+    { name: 'On Track',  value: Number(k.on_track  ?? 0), fill: '#38a169' },
+    { name: 'At Risk',   value: Number(k.at_risk   ?? 0), fill: '#d69e2e' },
+    { name: 'Off Track', value: Number(k.off_track ?? 0), fill: '#e53e3e' },
   ].filter(d => d.value > 0);
 
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Total Metrics"   value={k.TOTAL_METRICS ?? k.total_metrics ?? '…'} />
-        <KpiCard label="On Track"        value={k.ON_TRACK ?? k.on_track ?? '…'} color="green" />
-        <KpiCard label="At Risk"         value={k.AT_RISK ?? k.at_risk ?? '…'} color="yellow" />
-        <KpiCard label="Off Track"       value={k.OFF_TRACK ?? 0} color="red" />
+        <KpiCard label="Total Metrics"   value={k.total_metrics ?? '…'} />
+        <KpiCard label="On Track"        value={k.on_track  ?? '…'} color="green" />
+        <KpiCard label="At Risk"         value={k.at_risk   ?? '…'} color="yellow" />
+        <KpiCard label="Off Track"       value={k.off_track ?? 0}   color="red" />
       </div>
 
       <div className="tabs">

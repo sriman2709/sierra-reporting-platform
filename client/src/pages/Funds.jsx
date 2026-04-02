@@ -17,7 +17,7 @@ export default function Funds() {
   const { data: balance, loading: bL } = useData('/funds/balance');
   const { data: kpis,    loading: kL } = useData('/funds/kpis');
 
-  const k = kpis?.[0] || {};
+  const k = kpis || {};
 
   const pieData = (funds || []).map(f => ({
     name: f.fund_name,
@@ -27,10 +27,10 @@ export default function Funds() {
   return (
     <div>
       <div className="kpi-grid">
-        <KpiCard label="Total Funds"        value={k.CNT ?? k.total_funds ?? '…'} />
-        <KpiCard label="Total Balance"       value={fmt$(k.TOTAL ?? k.total_balance)} color="green" />
-        <KpiCard label="Restricted Balance"  value={fmt$(k.RESTRICTED ?? k.total_restricted)} color="yellow" />
-        <KpiCard label="Unassigned Balance"  value={fmt$(k.UNASSIGNED ?? k.total_unassigned)} color="" />
+        <KpiCard label="Total Funds"        value={k.total_funds       ?? '…'} />
+        <KpiCard label="Total Balance"      value={fmt$(k.total_balance)}      color="green" />
+        <KpiCard label="Restricted Balance" value={fmt$(k.total_restricted)}   color="yellow" />
+        <KpiCard label="Unassigned Balance" value={fmt$(k.total_unassigned)}   />
       </div>
 
       <div className="tabs">
