@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../../middleware/auth.js';
+import { FundsService } from './funds.service.js';
+const router = Router();
+const auth = [authenticate, authorize('funds')];
+const wrap = fn => async (req, res) => { try { res.json(await fn(req,res)); } catch(e){ res.status(500).json({error:e.message}); }};
+router.get('/',         ...auth, wrap(() => FundsService.getAll()));
+router.get('/kpis',     ...auth, wrap(() => FundsService.getKPIs()));
+router.get('/balance',  ...auth, wrap(() => FundsService.getBalance()));
+router.get('/forecast', ...auth, wrap(() => FundsService.getForecast()));
+export default router;

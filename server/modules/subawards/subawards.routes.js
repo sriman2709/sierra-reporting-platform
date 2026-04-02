@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../../middleware/auth.js';
+import { SubawardsService } from './subawards.service.js';
+const router = Router();
+const auth = [authenticate, authorize('subawards')];
+const wrap = fn => async (req, res) => { try { res.json(await fn(req,res)); } catch(e){ res.status(500).json({error:e.message}); }};
+router.get('/',              ...auth, wrap(() => SubawardsService.getAll()));
+router.get('/kpis',          ...auth, wrap(() => SubawardsService.getKPIs()));
+router.get('/subrecipients', ...auth, wrap(() => SubawardsService.getSubrecipients()));
+router.get('/monitoring',    ...auth, wrap(() => SubawardsService.getMonitoring()));
+router.get('/corrective',    ...auth, wrap(() => SubawardsService.getCorrective()));
+router.get('/grant/:id',     ...auth, wrap(req  => SubawardsService.getByGrant(req.params.id)));
+export default router;

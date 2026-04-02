@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../../middleware/auth.js';
+import { ForecastService } from './forecast.service.js';
+const router = Router();
+const auth = [authenticate, authorize('forecast')];
+const wrap = fn => async (req, res) => { try { res.json(await fn(req,res)); } catch(e){ res.status(500).json({error:e.message}); }};
+router.get('/',          ...auth, wrap(() => ForecastService.getVariance()));
+router.get('/kpis',      ...auth, wrap(() => ForecastService.getKPIs()));
+router.get('/scenarios', ...auth, wrap(() => ForecastService.getScenarios()));
+router.get('/entries',   ...auth, wrap(() => ForecastService.getEntries()));
+export default router;
