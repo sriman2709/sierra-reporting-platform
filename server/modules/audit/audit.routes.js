@@ -4,11 +4,15 @@ import { AuditService } from './audit.service.js';
 const router = Router();
 const auth = [authenticate, authorize('audit')];
 const wrap = fn => async (req, res) => { try { res.json(await fn(req,res)); } catch(e){ res.status(500).json({error:e.message}); }};
-router.get('/',          ...auth, wrap(() => AuditService.getReadiness()));
-router.get('/readiness', ...auth, wrap(() => AuditService.getReadiness()));
-router.get('/kpis',      ...auth, wrap(() => AuditService.getKPIs()));
-router.get('/evidence',  ...auth, wrap(() => AuditService.getEvidence()));
-router.get('/log',       ...auth, wrap(() => AuditService.getLog()));
-router.get('/documents', ...auth, wrap(() => AuditService.getDocuments()));
-router.get('/approvals', ...auth, wrap(() => AuditService.getApprovals()));
+
+router.get('/',             ...auth, wrap(() => AuditService.getReadiness()));
+router.get('/readiness',    ...auth, wrap(() => AuditService.getReadiness()));
+router.get('/kpis',         ...auth, wrap(() => AuditService.getKPIs()));
+router.get('/evidence',     ...auth, wrap(() => AuditService.getEvidence()));
+router.get('/log',          ...auth, wrap(() => AuditService.getLog()));
+router.get('/documents',    ...auth, wrap(() => AuditService.getDocuments()));
+router.get('/approvals',    ...auth, wrap(() => AuditService.getApprovals()));
+router.get('/export',       ...auth, wrap(() => AuditService.getExport()));
+router.get('/drilldown/:grantId', ...auth, wrap(req => AuditService.getDrilldown(req.params.grantId)));
+
 export default router;

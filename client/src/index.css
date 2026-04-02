@@ -17,6 +17,9 @@
   --yellow: #d69e2e;
   --red: #e53e3e;
   --orange: #dd6b20;
+  --primary: #1a5c9e;
+  --surface: #ffffff;
+  --surface-alt: #f7f9fc;
 }
 
 body {
@@ -153,6 +156,7 @@ body {
 .data-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: #f9fbff; }
+.data-table tr.row-hover:hover td { background: #eef4ff; cursor: pointer; }
 
 .badge {
   display: inline-block; padding: 3px 8px; border-radius: 20px;
