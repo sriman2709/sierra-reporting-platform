@@ -2,14 +2,17 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getUser, logout } from './auth';
 
 const NAV = [
+  { to: '/',           label: 'Dashboard',            icon: '⊞'  },
   { section: 'Core Modules' },
-  { to: '/grants',     label: 'Grants Management',   icon: '🏛' },
+  { to: '/grants',     label: 'Grants Management',    icon: '🏛' },
   { to: '/funds',      label: 'Fund Accounting',      icon: '💰' },
   { to: '/subawards',  label: 'Subaward & Compliance',icon: '📋' },
   { section: 'Analytics' },
   { to: '/outcomes',   label: 'Outcome Metrics',      icon: '📈' },
   { to: '/audit',      label: 'Audit Readiness',      icon: '🔍' },
   { to: '/forecast',   label: 'Financial Forecast',   icon: '📊' },
+  { section: 'Resources' },
+  { to: '/guide',      label: 'SAC Dev Guide',        icon: '📖' },
 ];
 
 export default function AppShell({ pageTitle }) {

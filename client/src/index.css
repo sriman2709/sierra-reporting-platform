@@ -184,6 +184,20 @@ body {
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--white); color: var(--text); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--bg); border-color: #cbd5e0; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-primary-sm {
+  padding: 4px 10px; font-size: 12px; border-radius: var(--radius);
+  background: var(--sierra-blue); color: var(--white); border: none; cursor: pointer;
+}
+.btn-primary-sm:hover { background: var(--sierra-dark); }
+
 @media (max-width: 900px) {
   .two-col, .three-col { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
