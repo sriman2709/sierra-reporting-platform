@@ -79,11 +79,18 @@ export async function askAI(question) {
           content: JSON.stringify(data),
         };
       } catch (err) {
+        // Surface HANA connectivity issues clearly so the AI can explain them
+        const msg = err.message || String(err);
+        const isHANA = msg.includes('HANA') || msg.includes('connect') || msg.includes('authenticate') || msg.includes('timeout');
         return {
           tool_call_id: tc.id,
           role: 'tool',
           name: tc.function.name,
-          content: JSON.stringify({ error: err.message }),
+          content: JSON.stringify({
+            error: isHANA
+              ? 'Database connection unavailable — HANA Cloud is not reachable. Please ensure the backend server is running and the IP allowlist includes this machine.'
+              : msg,
+          }),
         };
       }
     })
