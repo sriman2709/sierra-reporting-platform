@@ -36,8 +36,7 @@ export const Q = {
       SELECT AVG("cost_per_unit") AS peer_avg_cpu FROM ${S}."I_CostToServeUnit"
     )
     SELECT
-      p."program_id", p."program_name", p."program_type", p."department",
-      p."fiscal_year", p."budget_amount", p."status",
+      p."program_id", p."program_name", p."program_type",
       COALESCE(a.total_actuals,        0) AS total_actuals,
       COALESCE(a.metrics_with_actuals, 0) AS metrics_with_actuals,
       COALESCE(a.on_track_count,       0) AS on_track_count,
@@ -133,9 +132,10 @@ export const Q = {
   // ── Sprint 5: Cost-Effectiveness ─────────────────────────────────────────
   costEffectiveness: `
     SELECT
-      c."cost_unit_id", c."service_type", c."fiscal_year", c."period",
+      c."cost_unit_id", c."service_unit", c."fiscal_year", c."period",
       c."total_cost", c."units_delivered", c."cost_per_unit",
-      p."program_name", p."program_type", p."department",
+      c."benchmark_cost", c."variance_from_benchmark",
+      p."program_name", p."program_type",
       CASE
         WHEN c."cost_per_unit" <= (SELECT AVG("cost_per_unit") FROM ${S}."I_CostToServeUnit") * 0.9 THEN 'EFFICIENT'
         WHEN c."cost_per_unit" <= (SELECT AVG("cost_per_unit") FROM ${S}."I_CostToServeUnit") * 1.1 THEN 'AT_PEER'

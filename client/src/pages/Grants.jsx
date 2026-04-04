@@ -74,7 +74,7 @@ export default function Grants() {
   // Posture KPIs
   const atRisk    = (posture || []).filter(g => g.risk_tier === 'AT_RISK').length;
   const avgScore  = posture?.length ? Math.round((posture || []).reduce((s, g) => s + Number(g.posture_score || 0), 0) / posture.length) : 0;
-  const highRiskSubs = (subRisk || []).filter(s => s.monitoring_status === 'HIGH_RISK').length;
+  const highRiskSubs = (subRisk || []).filter(s => s.risk_rating === 'HIGH').length;
 
   return (
     <div>
@@ -173,7 +173,7 @@ export default function Grants() {
                     <th>Grant #</th><th>Title</th><th>CFDA</th>
                     <th>Posture Score</th><th>Risk Tier</th>
                     <th>Docs</th><th>Approvals</th><th>Evidence</th>
-                    <th>Open Findings</th><th>High Findings</th><th>High-Risk Subs</th>
+                    <th>Open Findings</th><th>High Findings</th>
                   </tr></thead>
                   <tbody>
                     {(posture || []).map(g => (
@@ -198,9 +198,6 @@ export default function Grants() {
                         <td style={{ textAlign:'center', color: g.high_findings > 0 ? 'var(--red)' : undefined, fontWeight: g.high_findings > 0 ? 700 : undefined }}>
                           {g.high_findings ?? 0}
                         </td>
-                        <td style={{ textAlign:'center', color: g.high_risk_count > 0 ? 'var(--orange)' : undefined }}>
-                          {g.high_risk_count ?? 0}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -219,25 +216,25 @@ export default function Grants() {
           {aL ? <div className="loading">Loading…</div> : (
             <table className="data-table">
               <thead><tr>
-                <th>Grant #</th><th>Cost Category</th><th>Cost Type</th>
-                <th>CFR Citation</th><th>Allowable</th><th>Conditions</th><th>Notes</th>
+                <th>Cost Category</th><th>CFR Reference</th>
+                <th>Allowable</th><th>Necessary</th><th>Reasonable</th><th>Allocable</th><th>Description</th>
               </tr></thead>
               <tbody>
                 {(allowable || []).map(r => (
                   <tr key={r.rule_id}>
-                    <td style={{ fontFamily:'monospace', fontSize:12 }}>{r.grant_number}</td>
                     <td style={{ fontWeight:500 }}>{r.cost_category}</td>
-                    <td>{r.cost_type}</td>
-                    <td style={{ fontFamily:'monospace', fontSize:11 }}>{r.cfr_citation}</td>
+                    <td style={{ fontFamily:'monospace', fontSize:11 }}>{r.cfr_reference || '—'}</td>
                     <td>
                       <span style={{
                         padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
                         background: r.is_allowable ? '#c6f6d522' : '#fed7d722',
                         color: r.is_allowable ? '#276749' : '#9b2335',
-                      }}>{r.is_allowable ? '✅ ALLOWABLE' : '❌ NOT ALLOWABLE'}</span>
+                      }}>{r.is_allowable ? '✅ YES' : '❌ NO'}</span>
                     </td>
-                    <td style={{ fontSize:12, maxWidth:200 }}>{r.conditions || '—'}</td>
-                    <td style={{ fontSize:12, color:'var(--text-muted)', maxWidth:180 }}>{r.notes || '—'}</td>
+                    <td style={{ textAlign:'center' }}>{r.is_necessary ? '✓' : '—'}</td>
+                    <td style={{ textAlign:'center' }}>{r.is_reasonable ? '✓' : '—'}</td>
+                    <td style={{ textAlign:'center' }}>{r.is_allocable ? '✓' : '—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text-muted)', maxWidth:200 }}>{r.description || r.exceptions || '—'}</td>
                   </tr>
                 ))}
                 {!(allowable || []).length && (
@@ -254,11 +251,11 @@ export default function Grants() {
         <div>
           <div className="kpi-grid" style={{ marginBottom:16 }}>
             <KpiCard label="Total Monitoring Records" value={(subRisk || []).length} />
-            <KpiCard label="High-Risk Subrecipients"  value={(subRisk || []).filter(s => s.monitoring_status === 'HIGH_RISK').length}  color="red" />
-            <KpiCard label="Compliant"                value={(subRisk || []).filter(s => s.monitoring_status === 'COMPLIANT').length}   color="green" />
-            <KpiCard label="Overdue Monitoring"
-              value={(subRisk || []).filter(s => s.next_monitoring_date && new Date(s.next_monitoring_date) < new Date()).length}
-              color="yellow"
+            <KpiCard label="High Risk"   value={(subRisk || []).filter(s => s.risk_rating === 'HIGH').length}   color="red" />
+            <KpiCard label="Medium Risk" value={(subRisk || []).filter(s => s.risk_rating === 'MEDIUM').length} color="yellow" />
+            <KpiCard label="Report Overdue"
+              value={(subRisk || []).filter(s => s.report_due_date && new Date(s.report_due_date) < new Date()).length}
+              color="orange"
             />
           </div>
           <SectionCard title="Subrecipient Monitoring Risk Matrix"
@@ -267,32 +264,31 @@ export default function Grants() {
             {srL ? <div className="loading">Loading…</div> : (
               <table className="data-table">
                 <thead><tr>
-                  <th>Grant #</th><th>Subrecipient</th><th>Monitoring Type</th>
-                  <th>Date</th><th>Findings</th><th>Actions Required</th>
-                  <th>Next Monitoring</th><th>Status</th>
+                  <th>Subrecipient</th><th>Monitoring Type</th>
+                  <th>Date</th><th>Findings</th><th>Follow-Up</th>
+                  <th>Report Due</th><th>Risk Rating</th>
                 </tr></thead>
                 <tbody>
                   {(subRisk || []).map(s => (
                     <tr key={s.monitoring_id}>
-                      <td style={{ fontFamily:'monospace', fontSize:12 }}>{s.grant_number}</td>
                       <td style={{ fontWeight:500 }}>{s.subrecipient_name || s.subrecipient_id?.slice(0,8)}</td>
                       <td>{s.monitoring_type}</td>
                       <td>{fmtDate(s.monitoring_date)}</td>
                       <td style={{ textAlign:'center', color: s.findings_count > 0 ? 'var(--red)' : undefined, fontWeight: s.findings_count > 0 ? 700 : undefined }}>
                         {s.findings_count ?? 0}
                       </td>
-                      <td style={{ textAlign:'center' }}>{s.corrective_actions_required ?? 0}</td>
-                      <td style={{ color: s.next_monitoring_date && new Date(s.next_monitoring_date) < new Date() ? 'var(--red)' : undefined }}>
-                        {fmtDate(s.next_monitoring_date)}
-                        {s.next_monitoring_date && new Date(s.next_monitoring_date) < new Date()
+                      <td style={{ textAlign:'center' }}>{s.follow_up_required ?? '—'}</td>
+                      <td style={{ color: s.report_due_date && new Date(s.report_due_date) < new Date() ? 'var(--red)' : undefined }}>
+                        {fmtDate(s.report_due_date)}
+                        {s.report_due_date && new Date(s.report_due_date) < new Date()
                           ? <span style={{ marginLeft:4, fontSize:10, color:'var(--red)', fontWeight:700 }}>OVERDUE</span> : null}
                       </td>
                       <td>
                         <span style={{
                           padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
-                          background: (RISK_COLOR[s.monitoring_status] || '#888') + '22',
-                          color: RISK_COLOR[s.monitoring_status] || '#888',
-                        }}>{s.monitoring_status}</span>
+                          background: (RISK_COLOR[s.risk_rating] || '#888') + '22',
+                          color: RISK_COLOR[s.risk_rating] || '#888',
+                        }}>{s.risk_rating}</span>
                       </td>
                     </tr>
                   ))}

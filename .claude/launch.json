@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sierra-backend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "cwd": "/Users/srimannarayanan/projects/sierra-reporting-platform/server",
+      "port": 4000
+    },
+    {
+      "name": "sierra-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "/Users/srimannarayanan/projects/sierra-reporting-platform/client",
+      "port": 5173
+    }
+  ]
+}

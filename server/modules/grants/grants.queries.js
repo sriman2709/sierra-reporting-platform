@@ -65,26 +65,8 @@ export const Q = {
         "grant_id",
         COUNT(*) AS total_findings,
         SUM(CASE WHEN "severity" = 'HIGH'   THEN 1 ELSE 0 END) AS high_findings,
-        SUM(CASE WHEN "severity" = 'MEDIUM' THEN 1 ELSE 0 END) AS medium_findings,
         SUM(CASE WHEN "status" IN ('OPEN','IN_PROGRESS') THEN 1 ELSE 0 END) AS open_findings
       FROM ${S}."I_CorrectiveAction"
-      GROUP BY "grant_id"
-    ),
-    monitoring AS (
-      SELECT
-        "grant_id",
-        COUNT(*) AS monitoring_count,
-        SUM(CASE WHEN "monitoring_status" = 'HIGH_RISK' THEN 1 ELSE 0 END) AS high_risk_count,
-        SUM(CASE WHEN "monitoring_status" = 'COMPLIANT' THEN 1 ELSE 0 END) AS compliant_count
-      FROM ${S}."I_SubrecipientMonitoring"
-      GROUP BY "grant_id"
-    ),
-    allowability AS (
-      SELECT
-        "grant_id",
-        COUNT(*) AS rule_count,
-        SUM(CASE WHEN "is_allowable" = 1 THEN 1 ELSE 0 END) AS allowed_count
-      FROM ${S}."I_AllowabilityRule"
       GROUP BY "grant_id"
     )
     SELECT
@@ -103,97 +85,67 @@ export const Q = {
       vc.EVIDENCE_COUNT,
       vc.SUBAWARD_COUNT,
       vc.COMPLIANCE_STATUS,
-      COALESCE(f.total_findings, 0)  AS total_findings,
-      COALESCE(f.high_findings,  0)  AS high_findings,
-      COALESCE(f.open_findings,  0)  AS open_findings,
-      COALESCE(m.monitoring_count, 0) AS monitoring_count,
-      COALESCE(m.high_risk_count,  0) AS high_risk_count,
-      COALESCE(m.compliant_count,  0) AS compliant_count,
-      COALESCE(a.rule_count,    0)   AS rule_count,
-      COALESCE(a.allowed_count, 0)   AS allowed_count,
-      -- Posture score (0-100)
+      COALESCE(f.total_findings, 0) AS total_findings,
+      COALESCE(f.high_findings,  0) AS high_findings,
+      COALESCE(f.open_findings,  0) AS open_findings,
+      -- Posture score (0-100): docs(30) + approvals(25) + evidence(25) - findings penalty(20)
       GREATEST(0, LEAST(100,
-        -- Document coverage: up to 25pts (5pts per doc, cap at 5 docs)
-        LEAST(25, COALESCE(vc.DOCUMENT_COUNT, 0) * 5)
-        -- Approval completeness: up to 20pts
-        + LEAST(20, COALESCE(vc.APPROVAL_COUNT, 0) * 5)
-        -- Evidence coverage: up to 20pts
-        + LEAST(20, COALESCE(vc.EVIDENCE_COUNT, 0) * 4)
-        -- Open findings penalty
+        LEAST(30, COALESCE(vc.DOCUMENT_COUNT, 0) * 6)
+        + LEAST(25, COALESCE(vc.APPROVAL_COUNT, 0) * 6)
+        + LEAST(25, COALESCE(vc.EVIDENCE_COUNT, 0) * 5)
         - (COALESCE(f.high_findings, 0) * 15)
-        - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 8
-        -- Monitoring: up to 15pts (5pts each, max 3)
-        + LEAST(15, COALESCE(m.compliant_count, 0) * 5)
-        -- High-risk subrecipients penalty
-        - (COALESCE(m.high_risk_count, 0) * 10)
-        -- Base 20pts for having any allowability rules reviewed
-        + CASE WHEN COALESCE(a.rule_count, 0) > 0 THEN 20 ELSE 0 END
+        - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 5
       )) AS posture_score,
-      -- Risk tier
       CASE
         WHEN GREATEST(0, LEAST(100,
-          LEAST(25, COALESCE(vc.DOCUMENT_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.APPROVAL_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.EVIDENCE_COUNT, 0) * 4)
+          LEAST(30, COALESCE(vc.DOCUMENT_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.APPROVAL_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.EVIDENCE_COUNT, 0) * 5)
           - (COALESCE(f.high_findings, 0) * 15)
-          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 8
-          + LEAST(15, COALESCE(m.compliant_count, 0) * 5)
-          - (COALESCE(m.high_risk_count, 0) * 10)
-          + CASE WHEN COALESCE(a.rule_count, 0) > 0 THEN 20 ELSE 0 END
+          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 5
         )) >= 80 THEN 'STRONG'
         WHEN GREATEST(0, LEAST(100,
-          LEAST(25, COALESCE(vc.DOCUMENT_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.APPROVAL_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.EVIDENCE_COUNT, 0) * 4)
+          LEAST(30, COALESCE(vc.DOCUMENT_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.APPROVAL_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.EVIDENCE_COUNT, 0) * 5)
           - (COALESCE(f.high_findings, 0) * 15)
-          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 8
-          + LEAST(15, COALESCE(m.compliant_count, 0) * 5)
-          - (COALESCE(m.high_risk_count, 0) * 10)
-          + CASE WHEN COALESCE(a.rule_count, 0) > 0 THEN 20 ELSE 0 END
+          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 5
         )) >= 60 THEN 'ADEQUATE'
         WHEN GREATEST(0, LEAST(100,
-          LEAST(25, COALESCE(vc.DOCUMENT_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.APPROVAL_COUNT, 0) * 5)
-          + LEAST(20, COALESCE(vc.EVIDENCE_COUNT, 0) * 4)
+          LEAST(30, COALESCE(vc.DOCUMENT_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.APPROVAL_COUNT, 0) * 6)
+          + LEAST(25, COALESCE(vc.EVIDENCE_COUNT, 0) * 5)
           - (COALESCE(f.high_findings, 0) * 15)
-          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 8
-          + LEAST(15, COALESCE(m.compliant_count, 0) * 5)
-          - (COALESCE(m.high_risk_count, 0) * 10)
-          + CASE WHEN COALESCE(a.rule_count, 0) > 0 THEN 20 ELSE 0 END
+          - (COALESCE(f.open_findings, 0) - COALESCE(f.high_findings, 0)) * 5
         )) >= 40 THEN 'NEEDS_IMPROVEMENT'
         ELSE 'AT_RISK'
       END AS risk_tier
     FROM ${S}."I_GrantMaster" g
-    LEFT JOIN ${S}."V_GrantCompliance"         vc ON vc."grant_id" = g."grant_id"
-    LEFT JOIN findings                          f  ON f."grant_id"  = g."grant_id"
-    LEFT JOIN monitoring                        m  ON m."grant_id"  = g."grant_id"
-    LEFT JOIN allowability                      a  ON a."grant_id"  = g."grant_id"
+    LEFT JOIN ${S}."V_GrantCompliance" vc ON vc."grant_id" = g."grant_id"
+    LEFT JOIN findings                  f  ON f."grant_id"  = g."grant_id"
     ORDER BY posture_score ASC`,
 
   // ── Sprint 4: Allowability Rules ─────────────────────────────────────────
   allowability: `
     SELECT
-      ar."rule_id", ar."grant_id", ar."cost_category", ar."cost_type",
-      ar."cfr_citation", ar."is_allowable", ar."conditions", ar."notes",
-      g."grant_number", g."grant_title", g."cfda_number"
-    FROM ${S}."I_AllowabilityRule" ar
-    JOIN ${S}."I_GrantMaster" g ON g."grant_id" = ar."grant_id"
-    ORDER BY g."grant_number", ar."cost_category"`,
+      "rule_id", "cost_category", "is_allowable",
+      "is_necessary", "is_reasonable", "is_allocable",
+      "cfr_reference", "description", "exceptions",
+      "effective_date", "expiry_date"
+    FROM ${S}."I_AllowabilityRule"
+    ORDER BY "cost_category"`,
 
   // ── Sprint 4: Subrecipient Risk Matrix ────────────────────────────────────
   subrecipientRisk: `
     SELECT
-      sm."monitoring_id", sm."grant_id", sm."subrecipient_id",
-      sm."monitoring_date", sm."monitoring_type", sm."monitoring_status",
-      sm."findings_count", sm."corrective_actions_required",
-      sm."next_monitoring_date", sm."monitored_by",
-      g."grant_number", g."grant_title", g."cfda_number",
-      s."organization_name" AS subrecipient_name,
-      s."ffata_reportable", s."award_amount" AS sub_award_amount
+      sm."monitoring_id", sm."subrecipient_id", sm."subaward_id",
+      sm."monitoring_date", sm."monitoring_type", sm."risk_rating",
+      sm."findings_count", sm."report_status", sm."follow_up_required",
+      sm."report_due_date", sm."conducted_by",
+      sr."subrecipient_name"
     FROM ${S}."I_SubrecipientMonitoring" sm
-    JOIN ${S}."I_GrantMaster" g ON g."grant_id" = sm."grant_id"
-    LEFT JOIN ${S}."I_Subaward" s ON s."subaward_id" = sm."subrecipient_id"
-    ORDER BY sm."monitoring_status" DESC, sm."next_monitoring_date" ASC`,
+    JOIN ${S}."I_Subrecipient" sr ON sr."subrecipient_id" = sm."subrecipient_id"
+    ORDER BY sm."risk_rating" DESC, sm."report_due_date" ASC`,
 
   kpis: `
     SELECT
