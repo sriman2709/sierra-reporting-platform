@@ -4,14 +4,16 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import authRoutes      from './modules/auth/auth.routes.js';
-import grantsRoutes    from './modules/grants/grants.routes.js';
-import fundsRoutes     from './modules/funds/funds.routes.js';
-import subawardsRoutes from './modules/subawards/subawards.routes.js';
-import outcomesRoutes  from './modules/outcomes/outcomes.routes.js';
-import auditRoutes     from './modules/audit/audit.routes.js';
-import forecastRoutes  from './modules/forecast/forecast.routes.js';
-import aiRoutes        from './modules/ai/ai.routes.js';
+import authRoutes        from './modules/auth/auth.routes.js';
+import grantsRoutes      from './modules/grants/grants.routes.js';
+import fundsRoutes       from './modules/funds/funds.routes.js';
+import subawardsRoutes   from './modules/subawards/subawards.routes.js';
+import outcomesRoutes    from './modules/outcomes/outcomes.routes.js';
+import auditRoutes       from './modules/audit/audit.routes.js';
+import forecastRoutes    from './modules/forecast/forecast.routes.js';
+import aiRoutes          from './modules/ai/ai.routes.js';
+import procurementRoutes from './modules/procurement/procurement.routes.js';
+import financeRoutes     from './modules/finance/finance.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app  = express();
@@ -37,14 +39,16 @@ app.use(express.json());
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }));
 
 // ── API routes ────────────────────────────────────────────────────────────────
-app.use('/api/auth',       authRoutes);
-app.use('/api/grants',     grantsRoutes);
-app.use('/api/funds',      fundsRoutes);
-app.use('/api/subawards',  subawardsRoutes);
-app.use('/api/outcomes',   outcomesRoutes);
-app.use('/api/audit',      auditRoutes);
-app.use('/api/forecast',   forecastRoutes);
-app.use('/api/ai',         aiRoutes);
+app.use('/api/auth',        authRoutes);
+app.use('/api/grants',      grantsRoutes);
+app.use('/api/funds',       fundsRoutes);
+app.use('/api/subawards',   subawardsRoutes);
+app.use('/api/outcomes',    outcomesRoutes);
+app.use('/api/audit',       auditRoutes);
+app.use('/api/forecast',    forecastRoutes);
+app.use('/api/ai',          aiRoutes);
+app.use('/api/procurement', procurementRoutes);
+app.use('/api/finance',     financeRoutes);
 
 // ── Serve React build in production ──────────────────────────────────────────
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

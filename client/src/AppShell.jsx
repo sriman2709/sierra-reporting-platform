@@ -2,19 +2,23 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getUser, logout } from './auth';
 
 const NAV = [
-  { to: '/',           label: 'Dashboard',            icon: '⊞'  },
+  { to: '/',             label: 'Dashboard',             icon: '⊞'  },
   { section: 'Core Modules' },
-  { to: '/grants',     label: 'Grants Management',    icon: '🏛' },
-  { to: '/funds',      label: 'Fund Accounting',      icon: '💰' },
-  { to: '/subawards',  label: 'Subaward & Compliance',icon: '📋' },
+  { to: '/grants',       label: 'Grants Management',     icon: '🏛' },
+  { to: '/funds',        label: 'Fund Accounting',       icon: '💰' },
+  { to: '/subawards',    label: 'Subaward & Compliance', icon: '📋' },
   { section: 'Analytics' },
-  { to: '/outcomes',   label: 'Outcome Metrics',      icon: '📈' },
-  { to: '/audit',      label: 'Audit Readiness',      icon: '🔍' },
-  { to: '/forecast',   label: 'Financial Forecast',   icon: '📊' },
+  { to: '/outcomes',     label: 'Outcome Metrics',       icon: '📈' },
+  { to: '/audit',        label: 'Audit Readiness',       icon: '🔍' },
+  { to: '/forecast',     label: 'Financial Forecast',    icon: '📊' },
+  { section: 'Enterprise Expansion' },
+  { to: '/finance',      label: 'Finance Controller',    icon: '🏦' },
+  { to: '/procurement',  label: 'Procurement & AP',      icon: '🛒' },
   { section: 'AI' },
-  { to: '/ai',         label: 'Sierra Intelligence',  icon: '✦'  },
+  { to: '/ai',           label: 'Sierra Intelligence',   icon: '✦'  },
   { section: 'Resources' },
-  { to: '/guide',      label: 'SAC Dev Guide',        icon: '📖' },
+  { to: '/guide',        label: 'SAC Dev Guide',         icon: '📖' },
+  { to: '/roadmap',      label: 'Roadmap',               icon: '🗺', roadmap: true },
 ];
 
 export default function AppShell({ pageTitle }) {
@@ -42,6 +46,7 @@ export default function AppShell({ pageTitle }) {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                style={item.roadmap ? { marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 10 } : undefined}
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>

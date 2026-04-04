@@ -502,6 +502,452 @@ for r in [
         ("log_id","entity_type","entity_id","event_type","user_id","user_name","ip_address")
         VALUES(?,?,?,?,?,?,'127.0.0.1')''', [id50()] + list(r))
 
+# ════════════════════════════════════════════════════════════════════════════
+# SPRINT 9 — Procurement & AP Intelligence
+# ════════════════════════════════════════════════════════════════════════════
+print("\n── Sprint 9: Procurement & AP ──")
+
+# Drop & recreate tables
+for vw in ['V_APAging','V_ProcurementPipeline','V_ContractUtilization']:
+    try: cur.execute(f'DROP VIEW "{S}"."{vw}"'); conn.commit()
+    except: pass
+for tbl in ['I_Invoice','I_PurchaseOrder','I_Contract','I_Vendor']:
+    try: cur.execute(f'DROP TABLE "{S}"."{tbl}"'); conn.commit()
+    except: pass
+
+run("CREATE I_Vendor", f'''
+CREATE COLUMN TABLE "{S}"."I_Vendor" (
+  "vendor_id"             VARCHAR(20)    PRIMARY KEY,
+  "vendor_name"           NVARCHAR(100)  NOT NULL,
+  "vendor_type"           VARCHAR(30),
+  "tin"                   VARCHAR(11),
+  "debarment_status"      VARCHAR(20),
+  "risk_score"            INTEGER,
+  "diversity_category"    VARCHAR(30),
+  "insurance_expiry"      DATE,
+  "certification_status"  VARCHAR(20),
+  "city"                  NVARCHAR(50),
+  "state"                 VARCHAR(2)
+)''')
+
+v_citywater  = id20(); v_metro    = id20(); v_digital  = id20()
+v_community  = id20(); v_infra    = id20(); v_tech     = id20()
+v_green      = id20(); v_horizon  = id20(); v_apex     = id20()
+v_summit     = id20()
+
+for r in [
+    (v_citywater, 'City Water Systems Inc',          'SUPPLIER',    '74-1234567', 'CLEAR',          15, 'NONE',    '2026-06-30', 'CURRENT',  'Austin',       'TX'),
+    (v_metro,     'Metro Construction Group',         'CONTRACTOR',  '47-2345678', 'CLEAR',          32, 'MBE',     '2025-09-30', 'CURRENT',  'Houston',      'TX'),
+    (v_digital,   'Digital Services LLC',             'IT',          '83-3456789', 'CLEAR',          22, 'WBE',     '2025-12-31', 'CURRENT',  'Dallas',       'TX'),
+    (v_community, 'Community Health Partners',        'NONPROFIT',   '55-4567890', 'CLEAR',          10, 'NONE',    '2026-03-31', 'CURRENT',  'San Antonio',  'TX'),
+    (v_infra,     'Infra Solutions Corp',             'CONTRACTOR',  '61-5678901', 'PENDING_REVIEW', 68, 'NONE',    '2025-06-15', 'EXPIRING', 'Austin',       'TX'),
+    (v_tech,      'TechForward Analytics',            'CONSULTANT',  '92-6789012', 'CLEAR',          41, 'SDVOSB',  '2026-01-31', 'CURRENT',  'Round Rock',   'TX'),
+    (v_green,     'GreenPath Environmental',          'CONSULTANT',  '38-7890123', 'CLEAR',          18, 'NONE',    '2026-08-31', 'CURRENT',  'Austin',       'TX'),
+    (v_horizon,   'Horizon Staffing Solutions',       'CONTRACTOR',  '79-8901234', 'FLAGGED',        85, 'NONE',    '2024-11-30', 'EXPIRED',  'Phoenix',      'AZ'),
+    (v_apex,      'Apex Engineering & Design',        'CONTRACTOR',  '43-9012345', 'CLEAR',          29, 'HUBZone', '2025-11-30', 'CURRENT',  'Fort Worth',   'TX'),
+    (v_summit,    'Summit Technology Group',          'IT',          '67-0123456', 'CLEAR',          55, 'MBE',     '2025-08-31', 'EXPIRING', 'Austin',       'TX'),
+]:
+    run(r[1][:20], f'''INSERT INTO "{S}"."I_Vendor"
+        ("vendor_id","vendor_name","vendor_type","tin","debarment_status","risk_score",
+         "diversity_category","insurance_expiry","certification_status","city","state")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)''', list(r))
+
+run("CREATE I_Contract", f'''
+CREATE COLUMN TABLE "{S}"."I_Contract" (
+  "contract_id"           VARCHAR(20)    PRIMARY KEY,
+  "vendor_id"             VARCHAR(20),
+  "grant_id"              VARCHAR(20),
+  "contract_number"       VARCHAR(30),
+  "contract_title"        NVARCHAR(100),
+  "contract_type"         VARCHAR(30),
+  "procurement_method"    VARCHAR(30),
+  "award_date"            DATE,
+  "start_date"            DATE,
+  "end_date"              DATE,
+  "original_amount"       DECIMAL(15,2),
+  "amended_amount"        DECIMAL(15,2),
+  "encumbered_amount"     DECIMAL(15,2),
+  "paid_to_date"          DECIMAL(15,2),
+  "contract_status"       VARCHAR(20),
+  "fund_id"               VARCHAR(20)
+)''')
+
+c1=id20();c2=id20();c3=id20();c4=id20();c5=id20()
+c6=id20();c7=id20();c8=id20();c9=id20();c10=id20();c11=id20();c12=id20()
+
+from datetime import timedelta
+today = date.today()
+exp_soon1 = (today + timedelta(days=35)).isoformat()
+exp_soon2 = (today + timedelta(days=50)).isoformat()
+
+for r in [
+    (c1,  v_citywater, None,    'CON-2024-001','Water Infrastructure Maintenance',    'SERVICES',      'COMPETITIVE_BID',  '2024-01-15','2024-02-01','2025-01-31',  350000, 350000, 280000, 245000,'ACTIVE',    f_general),
+    (c2,  v_metro,     g_cdbg,  'CON-2024-002','Community Center Renovation',          'CONSTRUCTION',  'COMPETITIVE_BID',  '2024-02-01','2024-03-01','2025-02-28',  980000, 1050000,840000, 620000,'ACTIVE',    f_cdbg),
+    (c3,  v_digital,   None,    'CON-2024-003','ERP System Support & Maintenance',     'IT',            'COMPETITIVE_BID',  '2023-11-01','2024-01-01','2025-12-31',  220000, 220000, 176000, 165000,'ACTIVE',    f_general),
+    (c4,  v_community, g_cdbg,  'CON-2024-004','Public Health Outreach Services',      'PROFESSIONAL',  'COMPETITIVE_BID',  '2024-03-15','2024-04-01',exp_soon1,     150000, 150000, 135000, 112000,'EXPIRING',  f_cdbg),
+    (c5,  v_infra,     None,    'CON-2024-005','Road Resurfacing Phase II',            'CONSTRUCTION',  'COMPETITIVE_BID',  '2024-04-01','2024-05-01','2025-04-30', 2500000,2500000,1875000,1400000,'ACTIVE',    f_cap),
+    (c6,  v_tech,      None,    'CON-2024-006','Data Analytics Consulting',            'PROFESSIONAL',  'SOLE_SOURCE',      '2024-01-20','2024-02-01','2025-01-31',   85000,  85000,  68000,  51000,'ACTIVE',    f_general),
+    (c7,  v_green,     g_cdbg,  'CON-2024-007','Environmental Assessment Services',    'PROFESSIONAL',  'COMPETITIVE_BID',  '2024-05-01','2024-06-01',exp_soon2,      62000,  62000,  55800,  46500,'EXPIRING',  f_cdbg),
+    (c8,  v_horizon,   None,    'CON-2024-008','Temporary Staffing Services',          'SERVICES',      'SOLE_SOURCE',      '2024-03-01','2024-03-15','2024-09-30',  125000, 125000,      0,  87500,'SUSPENDED', f_general),
+    (c9,  v_apex,      None,    'CON-2024-009','Bridge Inspection & Assessment',       'CONSTRUCTION',  'COMPETITIVE_BID',  '2024-06-01','2024-07-01','2025-06-30',  450000, 495000, 371250, 198000,'ACTIVE',    f_cap),
+    (c10, v_summit,    None,    'CON-2024-010','Cybersecurity Assessment',             'IT',            'COOPERATIVE',      '2024-04-15','2024-05-01','2025-04-30',   78000,  78000,  62400,  39000,'ACTIVE',    f_general),
+    (c11, v_metro,     None,    'CON-2024-011','Park Facilities Construction',         'CONSTRUCTION',  'COMPETITIVE_BID',  '2023-09-01','2023-10-01','2024-03-31', 1200000,1200000,1200000,1150000,'CLOSED',    f_cap),
+    (c12, v_digital,   None,    'CON-2024-012','Emergency IT Services',               'IT',            'EMERGENCY',        '2024-07-01','2024-07-01','2024-09-30',   45000,  45000,  45000,  22500,'EXPIRED',   f_general),
+]:
+    run(r[3], f'''INSERT INTO "{S}"."I_Contract"
+        ("contract_id","vendor_id","grant_id","contract_number","contract_title","contract_type",
+         "procurement_method","award_date","start_date","end_date","original_amount","amended_amount",
+         "encumbered_amount","paid_to_date","contract_status","fund_id")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
+
+run("CREATE I_PurchaseOrder", f'''
+CREATE COLUMN TABLE "{S}"."I_PurchaseOrder" (
+  "po_id"              VARCHAR(20)  PRIMARY KEY,
+  "po_number"          VARCHAR(20),
+  "contract_id"        VARCHAR(20),
+  "vendor_id"          VARCHAR(20),
+  "fund_id"            VARCHAR(20),
+  "grant_id"           VARCHAR(20),
+  "po_date"            DATE,
+  "amount"             DECIMAL(15,2),
+  "received_amount"    DECIMAL(15,2),
+  "invoiced_amount"    DECIMAL(15,2),
+  "po_status"          VARCHAR(20),
+  "department"         NVARCHAR(50),
+  "req_to_po_days"     INTEGER
+)''')
+
+po_ids = [id20() for _ in range(15)]
+for r in [
+    (po_ids[0],  'PO-2024-0001', c1,   v_citywater, f_general, None,    '2024-02-15',  87500, 87500,  87500, 'COMPLETE', 'Public Works',               5),
+    (po_ids[1],  'PO-2024-0002', c1,   v_citywater, f_general, None,    '2024-04-01',  87500, 87500,  87500, 'COMPLETE', 'Public Works',               4),
+    (po_ids[2],  'PO-2024-0003', c2,   v_metro,     f_cdbg,    g_cdbg,  '2024-03-15', 310000,155000, 155000, 'PARTIAL',  'Community Development',     12),
+    (po_ids[3],  'PO-2024-0004', c2,   v_metro,     f_cdbg,    g_cdbg,  '2024-06-01', 310000,      0,      0, 'OPEN',     'Community Development',      8),
+    (po_ids[4],  'PO-2024-0005', c3,   v_digital,   f_general, None,    '2024-01-10',  55000, 55000,  55000, 'COMPLETE', 'IT',                          3),
+    (po_ids[5],  'PO-2024-0006', c3,   v_digital,   f_general, None,    '2024-04-10',  55000, 27500,  27500, 'PARTIAL',  'IT',                          6),
+    (po_ids[6],  'PO-2024-0007', c4,   v_community, f_cdbg,    g_cdbg,  '2024-04-15',  37500, 37500,  37500, 'COMPLETE', 'Health & Human Services',    18),
+    (po_ids[7],  'PO-2024-0008', c4,   v_community, f_cdbg,    g_cdbg,  '2024-07-01',  37500, 18750,  18750, 'PARTIAL',  'Health & Human Services',    22),
+    (po_ids[8],  'PO-2024-0009', c5,   v_infra,     f_cap,     None,    '2024-05-20', 500000,500000, 500000, 'COMPLETE', 'Public Works',                7),
+    (po_ids[9],  'PO-2024-0010', c5,   v_infra,     f_cap,     None,    '2024-07-15', 500000,250000, 250000, 'PARTIAL',  'Public Works',                9),
+    (po_ids[10], 'PO-2024-0011', c6,   v_tech,      f_general, None,    '2024-02-10',  42500, 42500,  42500, 'COMPLETE', 'Administration',             35),
+    (po_ids[11], 'PO-2024-0012', None, v_summit,    f_general, None,    '2024-05-15',  19500, 9750,   9750,  'PARTIAL',  'IT',                         28),
+    (po_ids[12], 'PO-2024-0013', c9,   v_apex,      f_cap,     None,    '2024-07-20', 198000,198000, 198000, 'COMPLETE', 'Public Works',                2),
+    (po_ids[13], 'PO-2024-0014', c10,  v_summit,    f_general, None,    '2024-05-05',  39000, 39000,  39000, 'COMPLETE', 'IT',                         45),
+    (po_ids[14], 'PO-2024-0015', None, v_green,     f_general, None,    '2024-06-01',  18500,     0,      0, 'OPEN',     'Administration',             14),
+]:
+    run(r[1], f'''INSERT INTO "{S}"."I_PurchaseOrder"
+        ("po_id","po_number","contract_id","vendor_id","fund_id","grant_id","po_date",
+         "amount","received_amount","invoiced_amount","po_status","department","req_to_po_days")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
+
+run("CREATE I_Invoice", f'''
+CREATE COLUMN TABLE "{S}"."I_Invoice" (
+  "invoice_id"         VARCHAR(20)  PRIMARY KEY,
+  "po_id"              VARCHAR(20),
+  "vendor_id"          VARCHAR(20),
+  "invoice_number"     VARCHAR(30),
+  "invoice_date"       DATE,
+  "received_date"      DATE,
+  "approved_date"      DATE,
+  "payment_date"       DATE,
+  "amount"             DECIMAL(15,2),
+  "invoice_status"     VARCHAR(20),
+  "aging_days"         INTEGER,
+  "fund_id"            VARCHAR(20),
+  "is_duplicate_risk"  VARCHAR(1)
+)''')
+
+inv_ids = [id20() for _ in range(20)]
+for r in [
+    (inv_ids[0],  po_ids[0],  v_citywater, 'INV-CWS-0101', '2024-02-28','2024-03-02','2024-03-10','2024-03-20',  87500,'PAID',     142, f_general, 'N'),
+    (inv_ids[1],  po_ids[1],  v_citywater, 'INV-CWS-0102', '2024-04-30','2024-05-02','2024-05-10','2024-05-22',  87500,'PAID',      82, f_general, 'N'),
+    (inv_ids[2],  po_ids[2],  v_metro,     'INV-MCG-0201', '2024-04-15','2024-04-17','2024-04-25','2024-05-05', 155000,'PAID',      77, f_cdbg,    'N'),
+    (inv_ids[3],  po_ids[2],  v_metro,     'INV-MCG-0202', '2024-07-01','2024-07-03',None,         None,         78000,'OVERDUE',   95, f_cdbg,    'N'),
+    (inv_ids[4],  po_ids[4],  v_digital,   'INV-DS-0301',  '2024-01-31','2024-02-02','2024-02-10','2024-02-20',  55000,'PAID',     154, f_general, 'N'),
+    (inv_ids[5],  po_ids[5],  v_digital,   'INV-DS-0302',  '2024-05-15','2024-05-17','2024-05-25','2024-06-05',  27500,'PAID',      47, f_general, 'N'),
+    (inv_ids[6],  po_ids[6],  v_community, 'INV-CHP-0401', '2024-05-31','2024-06-02','2024-06-10','2024-06-20',  37500,'PAID',      31, f_cdbg,    'N'),
+    (inv_ids[7],  po_ids[7],  v_community, 'INV-CHP-0402', '2024-08-01','2024-08-03',None,         None,         18750,'OVERDUE',   65, f_cdbg,    'N'),
+    (inv_ids[8],  po_ids[8],  v_infra,     'INV-INF-0501', '2024-07-15','2024-07-17','2024-07-25','2024-08-05', 500000,'PAID',      17, f_cap,     'N'),
+    (inv_ids[9],  po_ids[9],  v_infra,     'INV-INF-0502', '2024-08-31','2024-09-02',None,         None,        250000,'PENDING',   34, f_cap,     'N'),
+    (inv_ids[10], po_ids[10], v_tech,      'INV-TFA-0601', '2024-02-28','2024-03-01','2024-03-08','2024-03-18',  42500,'PAID',     124, f_general, 'N'),
+    (inv_ids[11], po_ids[11], v_summit,    'INV-STG-0701', '2024-06-15','2024-06-17',None,         None,          9750,'APPROVED',  47, f_general, 'N'),
+    (inv_ids[12], po_ids[12], v_apex,      'INV-APX-0801', '2024-08-15','2024-08-17','2024-08-24','2024-09-03', 198000,'PAID',      17, f_cap,     'N'),
+    (inv_ids[13], po_ids[13], v_summit,    'INV-STG-0901', '2024-05-31','2024-06-02','2024-06-10','2024-06-20',  39000,'PAID',      31, f_general, 'N'),
+    (inv_ids[14], None,       v_horizon,   'INV-HOR-1001', '2024-04-01','2024-04-03',None,         None,          8750,'OVERDUE',  183, f_general, 'N'),
+    (inv_ids[15], None,       v_horizon,   'INV-HOR-1002', '2024-04-01','2024-04-04',None,         None,          8750,'DISPUTED', 183, f_general, 'Y'),
+    (inv_ids[16], po_ids[3],  v_metro,     'INV-MCG-0203', '2024-09-01','2024-09-03',None,         None,         95000,'PENDING',   30, f_cdbg,    'N'),
+    (inv_ids[17], None,       v_infra,     'INV-INF-0503', '2024-06-01','2024-06-02',None,         None,         45000,'DISPUTED',  91, f_cap,     'N'),
+    (inv_ids[18], None,       v_digital,   'INV-DS-0303',  '2024-07-15','2024-07-16','2024-07-22','2024-08-01',  12500,'PAID',      48, f_general, 'N'),
+    (inv_ids[19], po_ids[14], v_green,     'INV-GPE-1101', '2024-06-30','2024-07-01',None,         None,         18500,'OVERDUE',   93, f_general, 'N'),
+]:
+    run(r[3], f'''INSERT INTO "{S}"."I_Invoice"
+        ("invoice_id","po_id","vendor_id","invoice_number","invoice_date","received_date",
+         "approved_date","payment_date","amount","invoice_status","aging_days","fund_id","is_duplicate_risk")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
+
+# Views
+run("V_ProcurementPipeline", f'''
+CREATE OR REPLACE VIEW "{S}"."V_ProcurementPipeline" AS
+SELECT
+  po."po_id", po."po_number", po."department", po."po_date",
+  po."amount", po."po_status", po."req_to_po_days",
+  v."vendor_name", v."vendor_type", v."risk_score",
+  c."contract_number", c."procurement_method", c."contract_status",
+  f."fund_name",
+  COUNT(i."invoice_id") AS INVOICE_COUNT,
+  SUM(i."amount") AS INVOICED_TOTAL,
+  SUM(CASE WHEN i."invoice_status" = 'OVERDUE' THEN 1 ELSE 0 END) AS OVERDUE_INVOICES
+FROM "{S}"."I_PurchaseOrder" po
+LEFT JOIN "{S}"."I_Vendor"   v ON v."vendor_id"   = po."vendor_id"
+LEFT JOIN "{S}"."I_Contract" c ON c."contract_id" = po."contract_id"
+LEFT JOIN "{S}"."I_Fund"     f ON f."fund_id"     = po."fund_id"
+LEFT JOIN "{S}"."I_Invoice"  i ON i."po_id"       = po."po_id"
+GROUP BY po."po_id", po."po_number", po."department", po."po_date",
+  po."amount", po."po_status", po."req_to_po_days",
+  v."vendor_name", v."vendor_type", v."risk_score",
+  c."contract_number", c."procurement_method", c."contract_status",
+  f."fund_name"''')
+
+run("V_APAging", f'''
+CREATE OR REPLACE VIEW "{S}"."V_APAging" AS
+SELECT
+  i."invoice_id", i."invoice_number", i."invoice_date", i."amount",
+  i."invoice_status", i."aging_days", i."is_duplicate_risk",
+  v."vendor_name", v."vendor_type",
+  f."fund_name",
+  CASE
+    WHEN i."aging_days" <= 30 THEN 'CURRENT'
+    WHEN i."aging_days" <= 60 THEN 'OVERDUE_30'
+    WHEN i."aging_days" <= 90 THEN 'OVERDUE_60'
+    ELSE 'OVERDUE_90PLUS'
+  END AS AGING_BUCKET
+FROM "{S}"."I_Invoice" i
+LEFT JOIN "{S}"."I_Vendor" v ON v."vendor_id" = i."vendor_id"
+LEFT JOIN "{S}"."I_Fund"   f ON f."fund_id"   = i."fund_id"
+WHERE i."invoice_status" != 'PAID' ''')
+
+run("V_ContractUtilization", f'''
+CREATE OR REPLACE VIEW "{S}"."V_ContractUtilization" AS
+SELECT
+  c."contract_id", c."contract_number", c."contract_title",
+  c."contract_type", c."procurement_method", c."contract_status",
+  c."original_amount", c."amended_amount", c."paid_to_date",
+  ROUND(c."paid_to_date" / NULLIF(c."amended_amount",0) * 100, 1) AS UTILIZATION_PCT,
+  c."start_date", c."end_date",
+  DAYS_BETWEEN(CURRENT_DATE, c."end_date") AS DAYS_TO_EXPIRY,
+  v."vendor_name", v."vendor_type", v."risk_score", v."debarment_status", v."diversity_category",
+  f."fund_name"
+FROM "{S}"."I_Contract" c
+LEFT JOIN "{S}"."I_Vendor" v ON v."vendor_id" = c."vendor_id"
+LEFT JOIN "{S}"."I_Fund"   f ON f."fund_id"   = c."fund_id"''')
+
+# ════════════════════════════════════════════════════════════════════════════
+# SPRINT 10 — Finance & Budget Controller
+# ════════════════════════════════════════════════════════════════════════════
+print("\n── Sprint 10: Finance Controller ──")
+
+for vw in ['V_BudgetVariance','V_CloseReadiness']:
+    try: cur.execute(f'DROP VIEW "{S}"."{vw}"'); conn.commit()
+    except: pass
+for tbl in ['I_InterfundTransfer','I_CloseTask','I_JournalEntry','I_BudgetLine']:
+    try: cur.execute(f'DROP TABLE "{S}"."{tbl}"'); conn.commit()
+    except: pass
+
+run("CREATE I_BudgetLine", f'''
+CREATE COLUMN TABLE "{S}"."I_BudgetLine" (
+  "budget_id"        VARCHAR(20)    PRIMARY KEY,
+  "fund_id"          VARCHAR(20),
+  "department"       NVARCHAR(50),
+  "program_id"       VARCHAR(20),
+  "fiscal_year"      VARCHAR(6),
+  "account_code"     VARCHAR(20),
+  "account_name"     NVARCHAR(100),
+  "original_budget"  DECIMAL(15,2),
+  "revised_budget"   DECIMAL(15,2),
+  "encumbrances"     DECIMAL(15,2),
+  "actuals"          DECIMAL(15,2),
+  "budget_type"      VARCHAR(20)
+)''')
+
+depts = ['Public Works','Administration','Health & Human Services','Parks & Recreation','IT']
+for r in [
+    # dept,             fund,      program, fy,     acct_code, acct_name,                    orig_bud, rev_bud, encumb,  actuals,   btype
+    ('Public Works',    f_general, None,    'FY2024','5100','Personnel Services',              1200000, 1200000,  180000,  920000,  'OPERATING'),
+    ('Public Works',    f_cap,     None,    'FY2024','6100','Capital Infrastructure',         2500000, 2500000,  625000, 1400000,  'CAPITAL'),
+    ('Public Works',    f_general, None,    'FY2024','5200','Operations & Maintenance',        480000,  480000,   72000,  385000,  'OPERATING'),
+    ('Administration',  f_general, None,    'FY2024','5100','Personnel Services',              850000,  850000,  127500,  680000,  'OPERATING'),
+    ('Administration',  f_general, None,    'FY2024','5300','Professional Services',           220000,  220000,   44000,  198000,  'OPERATING'),  # overrun potential
+    ('Administration',  f_general, None,    'FY2024','5400','Technology & Software',           150000,  165000,   24750,  154000,  'OPERATING'),
+    ('Health & Human Services', f_cdbg, None,'FY2024','5100','Personnel Services',             620000,  620000,   93000,  496000,  'GRANT'),
+    ('Health & Human Services', f_cdbg, None,'FY2024','5500','Program Supplies',               180000,  180000,   27000,  162000,  'GRANT'),
+    ('Health & Human Services', f_general,None,'FY2024','5200','Community Services',           390000,  390000,       0,  420000,  'OPERATING'),  # OVERRUN
+    ('Parks & Recreation', f_general,None,  'FY2024','5100','Personnel Services',              510000,  510000,   76500,  408000,  'OPERATING'),
+    ('Parks & Recreation', f_cap,  None,    'FY2024','6200','Park Facilities',                 750000,  825000,  247500,  330000,  'CAPITAL'),
+    ('Parks & Recreation', f_general,None,  'FY2024','5200','Supplies & Equipment',            95000,   95000,    14250,   76000,  'OPERATING'),
+    ('IT',              f_general, None,    'FY2024','5100','Personnel Services',              680000,  680000,  102000,  612000,  'OPERATING'),
+    ('IT',              f_general, None,    'FY2024','5400','Software Licenses',               310000,  310000,   46500,  279000,  'OPERATING'),
+    ('IT',              f_general, None,    'FY2024','5410','Hardware & Equipment',            240000,  240000,   84000,  192000,  'CAPITAL'),
+    # FY2025 lines
+    ('Public Works',    f_general, None,    'FY2025','5100','Personnel Services',             1300000, 1300000,       0,   82000,  'OPERATING'),
+    ('Public Works',    f_cap,     None,    'FY2025','6100','Capital Infrastructure',         3200000, 3200000,  960000,  320000,  'CAPITAL'),
+    ('Administration',  f_general, None,    'FY2025','5100','Personnel Services',              920000,  920000,       0,   61000,  'OPERATING'),
+    ('Health & Human Services', f_cdbg, None,'FY2025','5100','Personnel Services',             660000,  660000,       0,   55000,  'GRANT'),
+    ('IT',              f_general, None,    'FY2025','5400','Software Licenses',               350000,  350000,  350000,  385000,  'WORKFORCE'),  # OVERRUN
+]:
+    run(r[5][:20], f'''INSERT INTO "{S}"."I_BudgetLine"
+        ("budget_id","fund_id","department","program_id","fiscal_year","account_code","account_name",
+         "original_budget","revised_budget","encumbrances","actuals","budget_type")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''', [id20(), r[1], r[0], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
+
+run("CREATE I_JournalEntry", f'''
+CREATE COLUMN TABLE "{S}"."I_JournalEntry" (
+  "journal_id"      VARCHAR(20)    PRIMARY KEY,
+  "entry_date"      DATE,
+  "fund_id"         VARCHAR(20),
+  "account_code"    VARCHAR(20),
+  "account_name"    NVARCHAR(100),
+  "debit_amount"    DECIMAL(15,2),
+  "credit_amount"   DECIMAL(15,2),
+  "description"     NVARCHAR(200),
+  "entered_by"      NVARCHAR(50),
+  "entry_status"    VARCHAR(20),
+  "period"          VARCHAR(7),
+  "is_unusual"      VARCHAR(1)
+)''')
+
+for r in [
+    ('2025-03-31', f_general,'5100','Personnel Services',          158000,      0,   'March payroll — Public Works',              'jsmith',   'POSTED',    '2025-03','N'),
+    ('2025-03-31', f_general,'5100','Personnel Services',          142000,      0,   'March payroll — Administration',            'jsmith',   'POSTED',    '2025-03','N'),
+    ('2025-03-31', f_cdbg,   '5100','Personnel Services',          103000,      0,   'March payroll — Health & HHS CDBG',         'jsmith',   'POSTED',    '2025-03','N'),
+    ('2025-03-15', f_general,'5200','Operations & Maintenance',     32500,      0,   'Quarterly maintenance contract payment',    'agarcia',  'POSTED',    '2025-03','N'),
+    ('2025-03-20', f_cap,    '6100','Capital Infrastructure',      500000,      0,   'Metro Construction Group — PO drawdown',    'agarcia',  'POSTED',    '2025-03','Y'),
+    ('2025-03-28', f_general,'5300','Professional Services',        85000,      0,   'TechForward analytics Q1 invoice',          'agarcia',  'POSTED',    '2025-03','N'),
+    ('2025-03-10', f_cdbg,   '5500','Program Supplies',             27000,      0,   'Health program supplies — bulk purchase',   'mpatel',   'POSTED',    '2025-03','N'),
+    ('2025-03-25', f_general,'5400','Technology & Software',        92000,      0,   'Annual enterprise software renewal',        'mpatel',   'EXCEPTION', '2025-03','Y'),
+    ('2025-03-29', f_general,'9000','Suspense Account',             15000,      0,   'Unclassified expenditure — under review',   'system',   'EXCEPTION', '2025-03','Y'),
+    ('2025-03-01', f_general,'5100','Personnel Services',               0, 158000,  'Payroll accrual reversal — Feb correction', 'jsmith',   'REVERSED',  '2025-02','N'),
+    ('2025-03-05', f_general,'4100','Tax Revenue',                      0, 245000,  'Property tax collection March',             'system',   'POSTED',    '2025-03','N'),
+    ('2025-03-12', f_cdbg,   '4200','Grant Revenue',                    0, 310000,  'HUD CDBG Q1 drawdown received',             'system',   'POSTED',    '2025-03','N'),
+    ('2025-03-18', f_general,'2100','Accounts Payable',             78000,      0,   'AP batch payment run — 12 vendors',         'agarcia',  'POSTED',    '2025-03','N'),
+    ('2025-03-22', f_cap,    '6200','Park Facilities',             110000,      0,   'Park renovation Phase 1 milestone',         'mpatel',   'POSTED',    '2025-03','N'),
+    ('2025-03-31', f_general,'9900','Year-End Adjustment',         450000,      0,   'Q1 year-end encumbrance release',           'controller','PENDING',  '2025-03','N'),
+    ('2025-03-30', f_general,'5200','Operations & Maintenance',     18500,      0,   'Emergency repair — Water main break',       'agarcia',  'POSTED',    '2025-03','N'),
+    ('2025-02-28', f_general,'5100','Personnel Services',          154000,      0,   'February payroll — Public Works',           'jsmith',   'POSTED',    '2025-02','N'),
+    ('2025-02-15', f_cdbg,   '5600','Contractual Services',         62000,      0,   'Community Health Partners Q2 payment',      'mpatel',   'POSTED',    '2025-02','N'),
+    ('2025-02-20', f_general,'1200','Investment Income',                0,  12500,  'Monthly investment portfolio income',        'system',   'POSTED',    '2025-02','N'),
+    ('2025-01-31', f_general,'5300','Professional Services',       320000,      0,   'Year-start consulting block — unusual amt', 'agarcia',  'EXCEPTION', '2025-01','Y'),
+    ('2025-03-31', f_cap,    '6100','Capital Infrastructure',           0, 625000,  'Capital project encumbrance transfer',      'controller','PENDING',  '2025-03','N'),
+    ('2025-03-15', f_general,'4300','Misc Revenue',                     0,   8200,  'Permit fee revenue March',                  'system',   'POSTED',    '2025-03','N'),
+    ('2025-03-08', f_wf,     '5100','Personnel Services — WIOA',   55000,      0,   'WIOA grant staff payroll',                  'jsmith',   'POSTED',    '2025-03','N'),
+    ('2025-03-20', f_wf,     '5600','Training Costs — WIOA',       38000,      0,   'Workforce training vendor payment',         'mpatel',   'POSTED',    '2025-03','N'),
+    ('2025-03-28', f_general,'5100','Personnel Services — Overtime',42000,     0,   'Q1 overtime — emergency response events',  'jsmith',   'POSTED',    '2025-03','Y'),
+]:
+    run(r[9][:12]+r[10], f'''INSERT INTO "{S}"."I_JournalEntry"
+        ("journal_id","entry_date","fund_id","account_code","account_name",
+         "debit_amount","credit_amount","description","entered_by","entry_status","period","is_unusual")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''', [id20()] + list(r))
+
+run("CREATE I_CloseTask", f'''
+CREATE COLUMN TABLE "{S}"."I_CloseTask" (
+  "task_id"          VARCHAR(20)   PRIMARY KEY,
+  "period"           VARCHAR(7),
+  "task_name"        NVARCHAR(100),
+  "assigned_to"      NVARCHAR(50),
+  "due_date"         DATE,
+  "completion_date"  DATE,
+  "task_status"      VARCHAR(20),
+  "priority"         VARCHAR(10),
+  "task_category"    VARCHAR(30)
+)''')
+
+for r in [
+    ('2025-03','Bank Reconciliation — General Fund',          'jsmith',     '2025-04-03','2025-04-02','COMPLETE',    'HIGH',  'RECONCILIATION'),
+    ('2025-03','Bank Reconciliation — CDBG Fund',             'jsmith',     '2025-04-03','2025-04-03','COMPLETE',    'HIGH',  'RECONCILIATION'),
+    ('2025-03','Payroll Journal Entries — March',             'jsmith',     '2025-04-02','2025-04-01','COMPLETE',    'HIGH',  'JOURNAL'),
+    ('2025-03','Grant Revenue Recognition — Q1',             'mpatel',     '2025-04-05','2025-04-04','COMPLETE',    'HIGH',  'JOURNAL'),
+    ('2025-03','Capital Project Encumbrance Review',          'agarcia',    '2025-04-05','2025-04-05','COMPLETE',    'MEDIUM','RECONCILIATION'),
+    ('2025-03','AP Invoice Aging Review',                     'agarcia',    '2025-04-04','2025-04-03','COMPLETE',    'HIGH',  'RECONCILIATION'),
+    ('2025-03','Inter-fund Transfer Verification',            'controller', '2025-04-07','2025-04-06','COMPLETE',    'MEDIUM','RECONCILIATION'),
+    ('2025-03','CAFR Footnote Schedules Draft',               'controller', '2025-04-10',None,         'IN_PROGRESS','HIGH',  'REPORTING'),
+    ('2025-03','Budget vs Actual Variance Report',            'mpatel',     '2025-04-08',None,         'IN_PROGRESS','MEDIUM','REPORTING'),
+    ('2025-03','Suspense Account Clearance',                  'agarcia',    '2025-04-01',None,         'OVERDUE',    'HIGH',  'JOURNAL'),
+    ('2025-03','Exception Journal Entry Resolution',          'controller', '2025-04-02',None,         'OVERDUE',    'HIGH',  'AUDIT'),
+    ('2025-03','Grant Drawdown Reconciliation — HUD',        'mpatel',     '2025-04-03',None,         'OVERDUE',    'HIGH',  'RECONCILIATION'),
+    ('2025-03','Department Head Sign-Off — Public Works',     'dept_head1', '2025-04-10',None,         'NOT_STARTED','HIGH',  'APPROVAL'),
+    ('2025-03','Department Head Sign-Off — Health & HHS',    'dept_head2', '2025-04-10',None,         'NOT_STARTED','HIGH',  'APPROVAL'),
+    ('2025-03','Final Controller Approval',                   'controller', '2025-04-15',None,         'IN_PROGRESS','MEDIUM','APPROVAL'),
+]:
+    run(r[2][:20], f'''INSERT INTO "{S}"."I_CloseTask"
+        ("task_id","period","task_name","assigned_to","due_date","completion_date",
+         "task_status","priority","task_category")
+        VALUES(?,?,?,?,?,?,?,?,?)''', [id20()] + list(r))
+
+run("CREATE I_InterfundTransfer", f'''
+CREATE COLUMN TABLE "{S}"."I_InterfundTransfer" (
+  "transfer_id"       VARCHAR(20)    PRIMARY KEY,
+  "from_fund_id"      VARCHAR(20),
+  "to_fund_id"        VARCHAR(20),
+  "transfer_amount"   DECIMAL(15,2),
+  "transfer_date"     DATE,
+  "transfer_purpose"  NVARCHAR(200),
+  "approved_by"       NVARCHAR(50),
+  "transfer_status"   VARCHAR(20),
+  "fiscal_year"       VARCHAR(6)
+)''')
+
+for r in [
+    (f_general, f_cdbg,   480000,'2024-02-15','Grant match funding — CDBG Community Development',      'controller', 'APPROVED','FY2024'),
+    (f_general, f_cap,    750000,'2024-03-01','Capital project support — Park facilities Phase 1',      'controller', 'APPROVED','FY2024'),
+    (f_general, f_wf,     120000,'2024-04-01','WIOA workforce program local match contribution',         'controller', 'APPROVED','FY2024'),
+    (f_cap,     f_general,  85000,'2024-05-15','Debt service transfer — annual principal & interest',   'controller', 'APPROVED','FY2024'),
+    (f_general, f_cdbg,   210000,'2024-07-01','Mid-year grant match adjustment — HUD HOME program',     'controller', 'APPROVED','FY2024'),
+    (f_cdbg,    f_general, 42000,'2024-08-15','Indirect cost allocation — approved NICRA rate',         'mpatel',     'APPROVED','FY2024'),
+    (f_general, f_cap,    300000,'2024-09-01','Emergency capital transfer — infrastructure repair',      'controller', 'PENDING', 'FY2024'),
+    (f_general, f_title1,  95000,'2024-01-15','Title I program local match FY2024',                    'controller', 'REVERSED','FY2024'),
+]:
+    run(r[4][:20], f'''INSERT INTO "{S}"."I_InterfundTransfer"
+        ("transfer_id","from_fund_id","to_fund_id","transfer_amount","transfer_date",
+         "transfer_purpose","approved_by","transfer_status","fiscal_year")
+        VALUES(?,?,?,?,?,?,?,?,?)''', [id20()] + list(r))
+
+# Finance views
+run("V_BudgetVariance", f'''
+CREATE OR REPLACE VIEW "{S}"."V_BudgetVariance" AS
+SELECT
+  bl."budget_id", bl."fund_id", bl."department", bl."fiscal_year",
+  bl."account_code", bl."account_name", bl."budget_type",
+  bl."original_budget", bl."revised_budget", bl."encumbrances", bl."actuals",
+  bl."revised_budget" - bl."encumbrances" - bl."actuals" AS AVAILABLE_BALANCE,
+  ROUND(bl."actuals" / NULLIF(bl."revised_budget", 0) * 100, 1) AS SPEND_PCT,
+  ROUND((bl."actuals" + bl."encumbrances") / NULLIF(bl."revised_budget", 0) * 100, 1) AS COMMITTED_PCT,
+  CASE
+    WHEN bl."actuals" > bl."revised_budget" THEN 'OVERRUN'
+    WHEN (bl."actuals" + bl."encumbrances") / NULLIF(bl."revised_budget",0) > 0.9 THEN 'AT_RISK'
+    WHEN (bl."actuals" + bl."encumbrances") / NULLIF(bl."revised_budget",0) > 0.75 THEN 'ON_TRACK'
+    ELSE 'UNDER_BUDGET'
+  END AS BUDGET_STATUS,
+  f."fund_name", f."fund_type"
+FROM "{S}"."I_BudgetLine" bl
+LEFT JOIN "{S}"."I_Fund" f ON f."fund_id" = bl."fund_id"''')
+
+run("V_CloseReadiness", f'''
+CREATE OR REPLACE VIEW "{S}"."V_CloseReadiness" AS
+SELECT
+  ct."period",
+  COUNT(*) OVER (PARTITION BY ct."period") AS TOTAL_TASKS,
+  SUM(CASE WHEN ct."task_status" = 'COMPLETE'     THEN 1 ELSE 0 END) OVER (PARTITION BY ct."period") AS COMPLETED,
+  SUM(CASE WHEN ct."task_status" = 'IN_PROGRESS'  THEN 1 ELSE 0 END) OVER (PARTITION BY ct."period") AS IN_PROGRESS,
+  SUM(CASE WHEN ct."task_status" = 'OVERDUE'       THEN 1 ELSE 0 END) OVER (PARTITION BY ct."period") AS OVERDUE,
+  SUM(CASE WHEN ct."task_status" = 'NOT_STARTED'  THEN 1 ELSE 0 END) OVER (PARTITION BY ct."period") AS NOT_STARTED,
+  ROUND(
+    SUM(CASE WHEN ct."task_status" = 'COMPLETE' THEN 1 ELSE 0 END) OVER (PARTITION BY ct."period") * 100.0
+    / COUNT(*) OVER (PARTITION BY ct."period"),
+    1
+  ) AS COMPLETION_PCT,
+  ct."task_id", ct."task_name", ct."assigned_to", ct."due_date",
+  ct."completion_date", ct."task_status", ct."priority", ct."task_category"
+FROM "{S}"."I_CloseTask" ct''')
+
 # ── Final row counts ──────────────────────────────────────────────────────────
 print(f"\n{'='*65}")
 print(f"  DONE  ✓ {ok}  ✗ {err}  Total: {ok+err}")
@@ -514,6 +960,8 @@ for t in [
     'I_ControlEvidence','I_OutcomeMetric','I_OutcomeTarget',
     'I_OutcomeActual','I_CostToServeUnit','I_FundBalanceClassification',
     'I_ScenarioVersion','I_ForecastEntry','I_AuditLog',
+    'I_Vendor','I_Contract','I_PurchaseOrder','I_Invoice',
+    'I_BudgetLine','I_JournalEntry','I_CloseTask','I_InterfundTransfer',
 ]:
     cur.execute(f'SELECT COUNT(*) FROM "{S}"."{t}"')
     cnt = cur.fetchone()[0]
