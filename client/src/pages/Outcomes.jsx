@@ -61,9 +61,9 @@ export default function Outcomes() {
 
   // Effectiveness KPIs
   const avgEff = effectiveness?.length
-    ? Math.round((effectiveness || []).reduce((s, p) => s + Number(p.effectiveness_score || 0), 0) / effectiveness.length)
+    ? Math.round((effectiveness || []).reduce((s, p) => s + Number(p.EFFECTIVENESS_SCORE || 0), 0) / effectiveness.length)
     : 0;
-  const highEff = (effectiveness || []).filter(p => p.effectiveness_tier === 'HIGH').length;
+  const highEff = (effectiveness || []).filter(p => p.EFFECTIVENESS_TIER === 'HIGH').length;
 
   // Trend — build per-metric series
   const metricNames = [...new Set((trend || []).map(r => r.metric_name))];
@@ -160,20 +160,20 @@ export default function Outcomes() {
                         <td style={{ fontWeight:500 }}>{p.program_name}</td>
                         <td style={{ fontSize:12 }}>{p.program_type}</td>
                         <td style={{ fontSize:12 }}>{p.department}</td>
-                        <td style={{ minWidth:140 }}><ScoreBar score={p.effectiveness_score} /></td>
+                        <td style={{ minWidth:140 }}><ScoreBar score={p.EFFECTIVENESS_SCORE} /></td>
                         <td>
                           <span style={{
                             padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
-                            background:(TIER_COLOR[p.effectiveness_tier]||'#888')+'22',
-                            color: TIER_COLOR[p.effectiveness_tier]||'#888',
-                          }}>{p.effectiveness_tier}</span>
+                            background:(TIER_COLOR[p.EFFECTIVENESS_TIER]||'#888')+'22',
+                            color: TIER_COLOR[p.EFFECTIVENESS_TIER]||'#888',
+                          }}>{p.EFFECTIVENESS_TIER}</span>
                         </td>
-                        <td style={{ textAlign:'center', color:'var(--green)', fontWeight: p.on_track_count > 0 ? 700 : undefined }}>{p.on_track_count}</td>
-                        <td style={{ textAlign:'center', color: p.at_risk_count  > 0 ? 'var(--yellow)' : undefined }}>{p.at_risk_count}</td>
-                        <td style={{ textAlign:'center', color: p.off_track_count> 0 ? 'var(--red)'    : undefined }}>{p.off_track_count}</td>
-                        <td style={{ textAlign:'right' }}>{fmt$(p.avg_cost_per_unit)}</td>
-                        <td style={{ textAlign:'right', color:'var(--text-muted)' }}>{fmt$(p.peer_avg_cpu)}</td>
-                        <td style={{ textAlign:'right' }}>{fmt$(p.total_cost)}</td>
+                        <td style={{ textAlign:'center', color:'var(--green)', fontWeight: p.ON_TRACK_COUNT > 0 ? 700 : undefined }}>{p.ON_TRACK_COUNT}</td>
+                        <td style={{ textAlign:'center', color: p.AT_RISK_COUNT  > 0 ? 'var(--yellow)' : undefined }}>{p.AT_RISK_COUNT}</td>
+                        <td style={{ textAlign:'center', color: p.OFF_TRACK_COUNT> 0 ? 'var(--red)'    : undefined }}>{p.OFF_TRACK_COUNT}</td>
+                        <td style={{ textAlign:'right' }}>{fmt$(p.AVG_COST_PER_UNIT)}</td>
+                        <td style={{ textAlign:'right', color:'var(--text-muted)' }}>{fmt$(p.PEER_AVG_CPU)}</td>
+                        <td style={{ textAlign:'right' }}>{fmt$(p.TOTAL_COST)}</td>
                       </tr>
                     ))}
                     {!(effectiveness||[]).length && <tr><td colSpan={11} style={{ textAlign:'center', color:'var(--text-muted)', padding:24 }}>No program data</td></tr>}
@@ -210,16 +210,16 @@ export default function Outcomes() {
                         <td style={{ fontWeight:500, maxWidth:180 }}>{g.grant_title}</td>
                         <td style={{ textAlign:'right' }}>{fmt$(g.award_amount)}</td>
                         <td>{g.program_name || '—'}</td>
-                        <td style={{ textAlign:'center' }}>{g.linked_metrics}</td>
-                        <td style={{ textAlign:'center', color:'var(--green)', fontWeight: g.on_track > 0 ? 700 : undefined }}>{g.on_track}</td>
-                        <td style={{ textAlign:'center', color: g.at_risk   > 0 ? 'var(--yellow)' : undefined }}>{g.at_risk}</td>
-                        <td style={{ textAlign:'center', color: g.off_track > 0 ? 'var(--red)'    : undefined }}>{g.off_track}</td>
+                        <td style={{ textAlign:'center' }}>{g.LINKED_METRICS}</td>
+                        <td style={{ textAlign:'center', color:'var(--green)', fontWeight: g.ON_TRACK > 0 ? 700 : undefined }}>{g.ON_TRACK}</td>
+                        <td style={{ textAlign:'center', color: g.AT_RISK   > 0 ? 'var(--yellow)' : undefined }}>{g.AT_RISK}</td>
+                        <td style={{ textAlign:'center', color: g.OFF_TRACK > 0 ? 'var(--red)'    : undefined }}>{g.OFF_TRACK}</td>
                         <td>
                           <span style={{
                             padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
-                            background:(OUT_COLOR[g.outcome_status]||'#888')+'22',
-                            color: OUT_COLOR[g.outcome_status]||'#888',
-                          }}>{g.outcome_status}</span>
+                            background:(OUT_COLOR[g.OUTCOME_STATUS]||'#888')+'22',
+                            color: OUT_COLOR[g.OUTCOME_STATUS]||'#888',
+                          }}>{g.OUTCOME_STATUS}</span>
                         </td>
                       </tr>
                     ))}
@@ -288,7 +288,7 @@ export default function Outcomes() {
                     data={(costEff || []).map(c => ({
                       name: (c.program_name || '').split(' ').slice(0,2).join(' '),
                       'Cost/Unit': Number(c.cost_per_unit || 0),
-                      'Peer Avg':  Number(c.peer_avg_cpu  || 0),  // not in query — approximated per row
+                      'Peer Avg':  Number(c.benchmark_cost || 0),
                     }))}
                     margin={{ top:10, right:20, bottom:30, left:20 }}
                   >
@@ -297,7 +297,7 @@ export default function Outcomes() {
                     <Tooltip formatter={v => fmt$(v)} />
                     <Legend />
                     <Bar dataKey="Cost/Unit" radius={[3,3,0,0]}>
-                      {(costEff || []).map((c, i) => <Cell key={i} fill={EFF_COLOR[c.efficiency_rating]||'#888'} />)}
+                      {(costEff || []).map((c, i) => <Cell key={i} fill={EFF_COLOR[c.EFFICIENCY_RATING]||'#888'} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -312,20 +312,20 @@ export default function Outcomes() {
                     {(costEff || []).map(c => (
                       <tr key={c.cost_unit_id}>
                         <td style={{ fontWeight:500 }}>{c.program_name}</td>
-                        <td>{c.service_type}</td>
+                        <td>{c.service_unit}</td>
                         <td>{c.fiscal_year}</td>
                         <td style={{ textAlign:'right' }}>{fmt$(c.total_cost)}</td>
                         <td style={{ textAlign:'right' }}>{fmtN(c.units_delivered)}</td>
                         <td style={{ textAlign:'right', fontWeight:700 }}>{fmt$(c.cost_per_unit)}</td>
-                        <td style={{ textAlign:'right', color: Number(c.pct_vs_peer) > 0 ? 'var(--red)' : 'var(--green)' }}>
-                          {fmtPct(c.pct_vs_peer)}
+                        <td style={{ textAlign:'right', color: Number(c.PCT_VS_PEER) > 0 ? 'var(--red)' : 'var(--green)' }}>
+                          {fmtPct(c.PCT_VS_PEER)}
                         </td>
                         <td>
                           <span style={{
                             padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
-                            background:(EFF_COLOR[c.efficiency_rating]||'#888')+'22',
-                            color: EFF_COLOR[c.efficiency_rating]||'#888',
-                          }}>{c.efficiency_rating}</span>
+                            background:(EFF_COLOR[c.EFFICIENCY_RATING]||'#888')+'22',
+                            color: EFF_COLOR[c.EFFICIENCY_RATING]||'#888',
+                          }}>{c.EFFICIENCY_RATING}</span>
                         </td>
                       </tr>
                     ))}

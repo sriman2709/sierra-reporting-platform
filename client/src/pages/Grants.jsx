@@ -68,12 +68,12 @@ export default function Grants() {
 
   // Risk tier distribution from posture
   const tierMap = {};
-  (posture || []).forEach(g => { const t = g.risk_tier || 'UNKNOWN'; tierMap[t] = (tierMap[t] || 0) + 1; });
+  (posture || []).forEach(g => { const t = g.RISK_TIER || 'UNKNOWN'; tierMap[t] = (tierMap[t] || 0) + 1; });
   const tierChart = Object.entries(tierMap).map(([name, count]) => ({ name, count }));
 
   // Posture KPIs
-  const atRisk    = (posture || []).filter(g => g.risk_tier === 'AT_RISK').length;
-  const avgScore  = posture?.length ? Math.round((posture || []).reduce((s, g) => s + Number(g.posture_score || 0), 0) / posture.length) : 0;
+  const atRisk    = (posture || []).filter(g => g.RISK_TIER === 'AT_RISK').length;
+  const avgScore  = posture?.length ? Math.round((posture || []).reduce((s, g) => s + Number(g.POSTURE_SCORE || 0), 0) / posture.length) : 0;
   const highRiskSubs = (subRisk || []).filter(s => s.risk_rating === 'HIGH').length;
 
   return (
@@ -181,22 +181,22 @@ export default function Grants() {
                         <td style={{ fontFamily:'monospace', fontSize:12 }}>{g.grant_number}</td>
                         <td style={{ fontWeight:500, maxWidth:180 }}>{g.grant_title}</td>
                         <td style={{ fontFamily:'monospace', fontSize:11 }}>{g.cfda_number}</td>
-                        <td style={{ minWidth:160 }}><ScoreBar score={g.posture_score} /></td>
+                        <td style={{ minWidth:160 }}><ScoreBar score={g.POSTURE_SCORE} /></td>
                         <td>
                           <span style={{
                             padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:700,
-                            background: (TIER_COLOR[g.risk_tier] || '#888') + '22',
-                            color: TIER_COLOR[g.risk_tier] || '#888',
-                          }}>{g.risk_tier}</span>
+                            background: (TIER_COLOR[g.RISK_TIER] || '#888') + '22',
+                            color: TIER_COLOR[g.RISK_TIER] || '#888',
+                          }}>{g.RISK_TIER}</span>
                         </td>
                         <td style={{ textAlign:'center' }}>{g.DOCUMENT_COUNT ?? 0}</td>
                         <td style={{ textAlign:'center' }}>{g.APPROVAL_COUNT ?? 0}</td>
                         <td style={{ textAlign:'center' }}>{g.EVIDENCE_COUNT ?? 0}</td>
-                        <td style={{ textAlign:'center', color: g.open_findings > 0 ? 'var(--red)' : undefined, fontWeight: g.open_findings > 0 ? 700 : undefined }}>
-                          {g.open_findings ?? 0}
+                        <td style={{ textAlign:'center', color: g.OPEN_FINDINGS > 0 ? 'var(--red)' : undefined, fontWeight: g.OPEN_FINDINGS > 0 ? 700 : undefined }}>
+                          {g.OPEN_FINDINGS ?? 0}
                         </td>
-                        <td style={{ textAlign:'center', color: g.high_findings > 0 ? 'var(--red)' : undefined, fontWeight: g.high_findings > 0 ? 700 : undefined }}>
-                          {g.high_findings ?? 0}
+                        <td style={{ textAlign:'center', color: g.HIGH_FINDINGS > 0 ? 'var(--red)' : undefined, fontWeight: g.HIGH_FINDINGS > 0 ? 700 : undefined }}>
+                          {g.HIGH_FINDINGS ?? 0}
                         </td>
                       </tr>
                     ))}
