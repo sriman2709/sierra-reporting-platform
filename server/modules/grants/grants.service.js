@@ -3,7 +3,7 @@ import { Q } from './grants.queries.js';
 
 export const GrantsService = {
   getAll:               ()   => query(Q.all),
-  getById:              (id) => query(Q.byId, [id]).then(r => r[0]),
+  getById:              (id) => query(Q.byId(id)).then(r => r[0]),
   getCompliance:        ()   => query(Q.compliance),
   getLifecycle:         ()   => query(Q.lifecycle),
   getBurnRate:          ()   => query(Q.burnRate),

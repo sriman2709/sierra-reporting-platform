@@ -7,7 +7,9 @@ export const Q = {
   approvals:  `SELECT ar.*, g."grant_number" FROM ${S}."I_ApprovalRecord" ar LEFT JOIN ${S}."I_GrantMaster" g ON g."grant_id"=ar."grant_id"`,
 
   // ── Sprint 3: Drilldown by grant ─────────────────────────────────────────
-  drillGrant: `
+  // NOTE: grant_id is always a 20-char hex string [0-9a-f] — safe to embed directly.
+  // hdb driver on HANA Cloud does not reliably support ? parameter binding.
+  drillGrant: (id) => `
     SELECT g."grant_id", g."grant_number", g."grant_title", g."grantor_agency",
            g."cfda_number", g."award_amount", g."award_start_date", g."award_end_date",
            g."award_status", g."indirect_cost_rate", g."match_required_pct",
@@ -15,46 +17,46 @@ export const Q = {
     FROM ${S}."I_GrantMaster" g
     LEFT JOIN ${S}."I_Program" p ON p."program_id" = g."program_id"
     LEFT JOIN ${S}."I_Fund"    f ON f."fund_id"    = g."fund_id"
-    WHERE g."grant_id" = ?`,
+    WHERE g."grant_id" = '${id}'`,
 
-  drillEvidence: `
+  drillEvidence: (id) => `
     SELECT * FROM ${S}."V_EvidenceChain"
-    WHERE "grant_id" = ?
+    WHERE "grant_id" = '${id}'
     ORDER BY "evidence_date" DESC`,
 
-  drillDocuments: `
+  drillDocuments: (id) => `
     SELECT "document_id", "document_number", "document_type", "document_title",
            "document_category", "document_date", "amount", "description",
            "file_name", "file_size_kb", "status", "created_by",
            "is_confidential", "access_level", "retention_date"
     FROM ${S}."I_Document"
-    WHERE "grant_id" = ?
+    WHERE "grant_id" = '${id}'
     ORDER BY "document_date" DESC`,
 
-  drillApprovals: `
+  drillApprovals: (id) => `
     SELECT "approval_id", "approval_type", "approver_name", "approver_role",
            "approval_status", "approval_step", "submitted_date", "decision_date",
            "decision_notes", "delegation_from"
     FROM ${S}."I_ApprovalRecord"
-    WHERE "grant_id" = ?
+    WHERE "grant_id" = '${id}'
     ORDER BY "decision_date" DESC NULLS LAST`,
 
-  drillFindings: `
+  drillFindings: (id) => `
     SELECT "action_id", "finding_description", "finding_category", "severity",
            "action_required", "action_taken", "responsible_party",
            "due_date", "completion_date", "status", "verified_by", "verified_date"
     FROM ${S}."I_CorrectiveAction"
-    WHERE "grant_id" = ?
+    WHERE "grant_id" = '${id}'
     ORDER BY
       CASE "severity" WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END,
       "due_date" ASC NULLS LAST`,
 
-  drillLog: `
+  drillLog: (id) => `
     SELECT "log_id", "event_timestamp", "user_name", "user_role",
            "action", "entity_type", "change_summary", "application_module",
            "is_tamper_evident", "hash_value"
     FROM ${S}."I_AuditLog"
-    WHERE "grant_id" = ?
+    WHERE "grant_id" = '${id}'
     ORDER BY "event_timestamp" DESC
     LIMIT 50`,
 

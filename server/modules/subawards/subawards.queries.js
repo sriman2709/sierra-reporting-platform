@@ -1,7 +1,7 @@
 import { SCHEMA as S } from '../../connectors/hana.js';
 export const Q = {
   all: `SELECT * FROM ${S}."V_SubawardTransparency"`,
-  byGrant: `SELECT * FROM ${S}."V_SubawardTransparency" WHERE PRIME_GRANT_ID = ?`,
+  byGrant: (id) => `SELECT * FROM ${S}."V_SubawardTransparency" WHERE PRIME_GRANT_ID = '${id}'`,
   subrecipients: `SELECT * FROM ${S}."I_Subrecipient" ORDER BY CAST("risk_score" AS INTEGER) DESC`,
   monitoring: `
     SELECT m.*, sr."subrecipient_name"

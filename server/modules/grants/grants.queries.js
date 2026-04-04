@@ -10,12 +10,12 @@ export const Q = {
     LEFT JOIN ${S}."I_Program" p ON p."program_id" = g."program_id"
     LEFT JOIN ${S}."I_Fund"    f ON f."fund_id"    = g."fund_id"`,
 
-  byId: `
+  byId: (id) => `
     SELECT g.*, p."program_name", p."program_type", f."fund_name", f."fund_type"
     FROM ${S}."I_GrantMaster" g
     LEFT JOIN ${S}."I_Program" p ON p."program_id" = g."program_id"
     LEFT JOIN ${S}."I_Fund"    f ON f."fund_id"    = g."fund_id"
-    WHERE g."grant_id" = ?`,
+    WHERE g."grant_id" = '${id}'`,
 
   compliance: `SELECT * FROM ${S}."V_GrantCompliance"`,
 

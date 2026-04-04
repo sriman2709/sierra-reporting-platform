@@ -10,15 +10,15 @@ export const AuditService = {
   getKPIs:       () => query(Q.kpis).then(r => r[0]),
 
   // Sprint 3 — full drilldown package for one grant
+  // NOTE: queries run sequentially — hdb single connection is not safe for
+  // concurrent parameterized statements (causes "unbound parameter" errors)
   getDrilldown: async (grantId) => {
-    const [grant, evidence, documents, approvals, findings, auditLog] = await Promise.all([
-      query(Q.drillGrant,    [grantId]).then(r => r[0] || null),
-      query(Q.drillEvidence, [grantId]),
-      query(Q.drillDocuments,[grantId]),
-      query(Q.drillApprovals,[grantId]),
-      query(Q.drillFindings, [grantId]),
-      query(Q.drillLog,      [grantId]),
-    ]);
+    const grant     = await query(Q.drillGrant(grantId)).then(r => r[0] || null);
+    const evidence  = await query(Q.drillEvidence(grantId));
+    const documents = await query(Q.drillDocuments(grantId));
+    const approvals = await query(Q.drillApprovals(grantId));
+    const findings  = await query(Q.drillFindings(grantId));
+    const auditLog  = await query(Q.drillLog(grantId));
     return { grant, evidence, documents, approvals, findings, auditLog };
   },
 
