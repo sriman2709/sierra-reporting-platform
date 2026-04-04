@@ -63,7 +63,7 @@ export default function Dashboard() {
 
   const summaryKpis = [
     { label: 'Total Grants',       value: gk.total_grants     ?? '…', color: '#1a5c9e' },
-    { label: 'Total Award Value',  value: fmt$(gk.total_award_value), color: '#1a5c9e' },
+    { label: 'Total Award Value',  value: fmt$(gk.total_award_amount), color: '#1a5c9e' },
     { label: 'Total Funds',        value: fk.total_funds      ?? '…', color: '#38a169' },
     { label: 'Total Available',    value: fmt$(fk.total_available),   color: '#38a169' },
     { label: 'Outcome Metrics',    value: ok.total_metrics    ?? '…', color: '#805ad5' },
