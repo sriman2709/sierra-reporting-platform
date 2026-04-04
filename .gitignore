@@ -42,3 +42,4 @@ logs/
 # Coverage
 coverage/
 .nyc_output/
+deploy.zip
