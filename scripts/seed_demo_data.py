@@ -37,6 +37,20 @@ def run(label, sql, params=None):
         print(f"  ERR {label}: {str(e)[:120]}")
         err += 1
 
+def create_table(label, sql):
+    """CREATE COLUMN TABLE — silently skips if table already exists (error 288)."""
+    global ok, err
+    try:
+        cur.execute(sql)
+        conn.commit()
+        ok += 1
+    except Exception as e:
+        if '288' in str(e) or 'duplicate table name' in str(e):
+            ok += 1  # table already exists — not an error on re-run
+        else:
+            print(f"  ERR {label}: {str(e)[:120]}")
+            err += 1
+
 def id20(): return uuid.uuid4().hex[:20]
 def id28(): return uuid.uuid4().hex[:28]
 def id50(): return str(uuid.uuid4())[:50]
@@ -516,7 +530,7 @@ for tbl in ['I_Invoice','I_PurchaseOrder','I_Contract','I_Vendor']:
     try: cur.execute(f'DROP TABLE "{S}"."{tbl}"'); conn.commit()
     except: pass
 
-run("CREATE I_Vendor", f'''
+create_table("CREATE I_Vendor", f'''
 CREATE COLUMN TABLE "{S}"."I_Vendor" (
   "vendor_id"             VARCHAR(20)    PRIMARY KEY,
   "vendor_name"           NVARCHAR(100)  NOT NULL,
@@ -553,7 +567,7 @@ for r in [
          "diversity_category","insurance_expiry","certification_status","city","state")
         VALUES(?,?,?,?,?,?,?,?,?,?,?)''', list(r))
 
-run("CREATE I_Contract", f'''
+create_table("CREATE I_Contract", f'''
 CREATE COLUMN TABLE "{S}"."I_Contract" (
   "contract_id"           VARCHAR(20)    PRIMARY KEY,
   "vendor_id"             VARCHAR(20),
@@ -601,7 +615,7 @@ for r in [
          "encumbered_amount","paid_to_date","contract_status","fund_id")
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
 
-run("CREATE I_PurchaseOrder", f'''
+create_table("CREATE I_PurchaseOrder", f'''
 CREATE COLUMN TABLE "{S}"."I_PurchaseOrder" (
   "po_id"              VARCHAR(20)  PRIMARY KEY,
   "po_number"          VARCHAR(20),
@@ -641,7 +655,7 @@ for r in [
          "amount","received_amount","invoiced_amount","po_status","department","req_to_po_days")
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
 
-run("CREATE I_Invoice", f'''
+create_table("CREATE I_Invoice", f'''
 CREATE COLUMN TABLE "{S}"."I_Invoice" (
   "invoice_id"         VARCHAR(20)  PRIMARY KEY,
   "po_id"              VARCHAR(20),
@@ -754,7 +768,7 @@ for tbl in ['I_InterfundTransfer','I_CloseTask','I_JournalEntry','I_BudgetLine']
     try: cur.execute(f'DROP TABLE "{S}"."{tbl}"'); conn.commit()
     except: pass
 
-run("CREATE I_BudgetLine", f'''
+create_table("CREATE I_BudgetLine", f'''
 CREATE COLUMN TABLE "{S}"."I_BudgetLine" (
   "budget_id"        VARCHAR(20)    PRIMARY KEY,
   "fund_id"          VARCHAR(20),
@@ -800,7 +814,7 @@ for r in [
          "original_budget","revised_budget","encumbrances","actuals","budget_type")
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''', [id20(), r[1], r[0], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
 
-run("CREATE I_JournalEntry", f'''
+create_table("CREATE I_JournalEntry", f'''
 CREATE COLUMN TABLE "{S}"."I_JournalEntry" (
   "journal_id"      VARCHAR(20)    PRIMARY KEY,
   "entry_date"      DATE,
@@ -848,7 +862,7 @@ for r in [
          "debit_amount","credit_amount","description","entered_by","entry_status","period","is_unusual")
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''', [id20()] + list(r))
 
-run("CREATE I_CloseTask", f'''
+create_table("CREATE I_CloseTask", f'''
 CREATE COLUMN TABLE "{S}"."I_CloseTask" (
   "task_id"          VARCHAR(20)   PRIMARY KEY,
   "period"           VARCHAR(7),
@@ -883,7 +897,7 @@ for r in [
          "task_status","priority","task_category")
         VALUES(?,?,?,?,?,?,?,?,?)''', [id20()] + list(r))
 
-run("CREATE I_InterfundTransfer", f'''
+create_table("CREATE I_InterfundTransfer", f'''
 CREATE COLUMN TABLE "{S}"."I_InterfundTransfer" (
   "transfer_id"       VARCHAR(20)    PRIMARY KEY,
   "from_fund_id"      VARCHAR(20),
@@ -955,7 +969,7 @@ FROM "{S}"."I_CloseTask" ct''')
 print("\n  Sprint 11: Capital Projects & CIP…")
 
 # ── I_CapitalProject ──────────────────────────────────────────────────────────
-run("CREATE I_CapitalProject", f'''
+create_table("CREATE I_CapitalProject", f'''
 CREATE COLUMN TABLE "{S}"."I_CapitalProject" (
   "project_id"          VARCHAR(20)    PRIMARY KEY,
   "project_number"      VARCHAR(20),
@@ -1040,7 +1054,7 @@ for r in capital_projects:
          start, exp_comp, act_comp, fund_id, grant_id, priority, pm])
 
 # ── I_ChangeOrder ─────────────────────────────────────────────────────────────
-run("CREATE I_ChangeOrder", f'''
+create_table("CREATE I_ChangeOrder", f'''
 CREATE COLUMN TABLE "{S}"."I_ChangeOrder" (
   "change_order_id"      VARCHAR(20)   PRIMARY KEY,
   "project_id"           VARCHAR(20),
@@ -1085,7 +1099,7 @@ for r in change_orders:
          cost, sched, approved_by, approved_date, submitted, status])
 
 # ── I_ProjectFunding ──────────────────────────────────────────────────────────
-run("CREATE I_ProjectFunding", f'''
+create_table("CREATE I_ProjectFunding", f'''
 CREATE COLUMN TABLE "{S}"."I_ProjectFunding" (
   "funding_id"       VARCHAR(20)    PRIMARY KEY,
   "project_id"       VARCHAR(20),
@@ -1144,7 +1158,7 @@ for r in project_funding:
         [id20(), pid, stype, sname, fund_id, grant_id, alloc, drawn])
 
 # ── I_Milestone ───────────────────────────────────────────────────────────────
-run("CREATE I_Milestone", f'''
+create_table("CREATE I_Milestone", f'''
 CREATE COLUMN TABLE "{S}"."I_Milestone" (
   "milestone_id"     VARCHAR(20)    PRIMARY KEY,
   "project_id"       VARCHAR(20),
