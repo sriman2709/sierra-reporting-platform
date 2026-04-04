@@ -14,6 +14,7 @@ import AIChat      from './pages/AIChat';
 import Procurement    from './pages/Procurement';
 import Finance        from './pages/Finance';
 import CapitalProjects from './pages/CapitalProjects';
+import Assets         from './pages/Assets';
 import Roadmap        from './pages/Roadmap';
 
 const PAGE_TITLES = {
@@ -29,6 +30,7 @@ const PAGE_TITLES = {
   '/procurement':        'Procurement & AP Intelligence',
   '/finance':            'Finance Controller',
   '/capital-projects':   'Capital Projects & CIP',
+  '/assets':             'Assets & Plant Maintenance',
   '/roadmap':            'Enterprise Roadmap',
 };
 
@@ -57,6 +59,7 @@ export default function App() {
           <Route path="/procurement"      element={<Procurement />} />
           <Route path="/finance"          element={<Finance />} />
           <Route path="/capital-projects" element={<CapitalProjects />} />
+          <Route path="/assets"           element={<Assets />} />
           <Route path="/roadmap"          element={<Roadmap />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

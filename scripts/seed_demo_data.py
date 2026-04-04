@@ -1325,6 +1325,359 @@ SELECT
 FROM "{S}"."I_CapitalProject"
 GROUP BY "project_type"''')
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPRINT 12 — Assets & Plant Maintenance
+# ═══════════════════════════════════════════════════════════════════════════════
+print("\n  Sprint 12: Assets & Plant Maintenance…")
+
+# ── I_Asset ──────────────────────────────────────────────────────────────────
+for t in ['I_FailureEvent','I_WorkOrder','I_PMPlan','I_Asset']:
+    run(f"CLR {t}", f'DELETE FROM "{S}"."{t}"')
+
+create_table("CREATE I_Asset", f'''
+CREATE COLUMN TABLE "{S}"."I_Asset" (
+  "asset_id"           VARCHAR(20)  PRIMARY KEY,
+  "asset_number"       VARCHAR(20),
+  "asset_name"         NVARCHAR(100),
+  "asset_type"         VARCHAR(20),
+  "department"         NVARCHAR(80),
+  "location"           NVARCHAR(100),
+  "acquisition_date"   DATE,
+  "acquisition_cost"   DECIMAL(15,2),
+  "useful_life_years"  INTEGER,
+  "salvage_value"      DECIMAL(15,2),
+  "current_value"      DECIMAL(15,2),
+  "condition_rating"   INTEGER,
+  "asset_status"       VARCHAR(20),
+  "fund_id"            VARCHAR(20),
+  "last_inspection_date" DATE,
+  "next_inspection_date" DATE,
+  "warranty_expiry"    DATE,
+  "serial_number"      NVARCHAR(40),
+  "manufacturer"       NVARCHAR(60),
+  "model"              NVARCHAR(60)
+)''')
+
+# Stable asset IDs
+a_truck1  = id20(); a_truck2  = id20(); a_truck3  = id20(); a_hvac1  = id20()
+a_hvac2   = id20(); a_gen1    = id20(); a_pump1   = id20(); a_pump2  = id20()
+a_veh1    = id20(); a_veh2    = id20(); a_veh3    = id20(); a_veh4   = id20()
+a_bldg1   = id20(); a_bldg2   = id20(); a_bldg3   = id20()
+a_it1     = id20(); a_it2     = id20(); a_it3     = id20()
+a_inf1    = id20(); a_inf2    = id20()
+
+# (asset_id, number, name, type, department, location,
+#  acq_date, acq_cost, useful_life, salvage, current_value,
+#  condition, status, fund_id, last_insp, next_insp, warranty, serial, mfr, model)
+assets = [
+    # Fleet — 3 trucks
+    (a_truck1,'FLT-001','Refuse Truck #7',           'FLEET',    'Sanitation',      'Public Works Yard',
+     '2018-03-15', 285000, 10, 15000, 68000,  1,'UNDER_REPAIR',f_general,'2024-01-10','2024-07-10',None,       'TK2018-443','Mack','LR64B'),
+    (a_truck2,'FLT-002','Refuse Truck #12',          'FLEET',    'Sanitation',      'Public Works Yard',
+     '2020-07-01', 295000, 10, 15000, 157000, 3,'ACTIVE',      f_general,'2024-03-01','2024-09-01','2025-07-01','TK2020-781','Mack','LR64B'),
+    (a_truck3,'FLT-003','Street Sweeper',            'FLEET',    'Public Works',    'Public Works Yard',
+     '2019-05-20', 210000, 8,  10000, 71000,  2,'ACTIVE',      f_general,'2024-02-15','2024-08-15',None,       'SW2019-229','Elgin','Pelican'),
+    # HVAC systems
+    (a_hvac1, 'BLD-101','City Hall Main HVAC',       'EQUIPMENT','Facilities',      'City Hall — Roof',
+     '2014-08-01', 185000, 15, 5000,  62000,  2,'ACTIVE',      f_general,'2024-01-20','2024-07-20',None,       'HVAC2014-77','Carrier','AquaForce 30XW'),
+    (a_hvac2, 'BLD-102','Community Center HVAC',     'EQUIPMENT','Parks & Rec',     'Community Center',
+     '2023-11-15', 142000, 15, 4000,  131000, 5,'ACTIVE',      f_general,'2024-04-01','2024-10-01','2028-11-15','HVAC2023-14','Trane','Centrifugal CGA'),
+    # Generators
+    (a_gen1,  'BLD-201','Emergency Generator — PD',  'EQUIPMENT','Police Dept',     'Police HQ',
+     '2017-06-01', 95000,  12, 3000,  38000,  3,'ACTIVE',      f_general,'2024-03-15','2024-09-15','2022-06-01','GEN2017-55','Caterpillar','C15'),
+    # Water pumps
+    (a_pump1, 'UTL-001','Water Booster Pump Station A','INFRASTRUCTURE','Public Works','Water Plant',
+     '2016-04-01', 320000, 20, 10000, 192000, 3,'ACTIVE',      f_cap,    '2024-02-01','2024-08-01',None,       'PMP2016-99','Grundfos','CR 90-6'),
+    (a_pump2, 'UTL-002','Wastewater Lift Station #3','INFRASTRUCTURE','Public Works','Riverside Dr',
+     '2015-09-01', 280000, 20, 8000,  140000, 2,'ACTIVE',      f_cap,    '2024-01-15','2024-07-15',None,       'PMP2015-44','Flygt','NP 3127'),
+    # Fleet vehicles
+    (a_veh1,  'VEH-001','Fire Engine — Station 1',   'VEHICLE',  'Fire Dept',       'Fire Station 1',
+     '2019-01-15', 580000, 15, 50000, 385000, 4,'ACTIVE',      f_general,'2024-04-01','2024-10-01','2024-01-15','FE2019-01','Pierce','Enforcer PUC'),
+    (a_veh2,  'VEH-002','Fire Ladder — Station 2',   'VEHICLE',  'Fire Dept',       'Fire Station 2',
+     '2016-08-01', 1100000,20, 80000, 606000, 3,'ACTIVE',      f_general,'2024-03-20','2024-09-20',None,       'FL2016-02','Pierce','Aerial PUC'),
+    (a_veh3,  'VEH-003','Police Patrol Fleet (10)',   'VEHICLE',  'Police Dept',     'Police Garage',
+     '2022-03-01', 420000, 5,  25000, 252000, 4,'ACTIVE',      f_general,'2024-04-15','2024-10-15','2027-03-01','PPF2022-A','Ford','Police Interceptor'),
+    (a_veh4,  'VEH-004','Parks Utility Truck Fleet', 'FLEET',    'Parks & Rec',     'Parks Yard',
+     '2020-11-01', 185000, 8,  10000, 93000,  3,'ACTIVE',      f_general,'2024-02-10','2024-08-10','2025-11-01','PUT2020-B','Ford','F-250'),
+    # Buildings
+    (a_bldg1, 'BLD-301','City Hall Roof System',     'BUILDING', 'Facilities',      'City Hall',
+     '2010-05-01', 420000, 25, 10000, 218400, 3,'ACTIVE',      f_general,'2023-10-01','2024-10-01',None,       'RF2010-CHL','Johns Manville','TPO Membrane'),
+    (a_bldg2, 'BLD-302','Library Elevator System',   'BUILDING', 'Library Services','Main Library',
+     '2015-03-01', 145000, 20, 5000,  87000,  4,'ACTIVE',      f_general,'2024-03-10','2024-09-10','2025-03-01','ELV2015-LIB','Otis','Gen2'),
+    (a_bldg3, 'BLD-303','Fire Station 3 Roof',       'BUILDING', 'Fire Dept',       'Fire Station 3',
+     '2009-07-01', 280000, 20, 5000,  112000, 2,'ACTIVE',      f_general,'2023-07-01','2024-07-01',None,       'RF2009-FS3','Tremco','IRMA Roof'),
+    # IT infrastructure
+    (a_it1,   'IT-001', 'Network Core Switch Stack', 'IT',       'Information Technology','City Hall — IT Room',
+     '2020-09-01', 85000,  7,  3000,  48000,  4,'ACTIVE',      f_general,'2024-04-01','2024-10-01','2027-09-01','SW2020-CIS','Cisco','Catalyst 9300'),
+    (a_it2,   'IT-002', 'Unified Communications Server','IT',    'Information Technology','City Hall — Server Room',
+     '2018-11-01', 120000, 7,  5000,  34000,  3,'ACTIVE',      f_general,'2024-01-15','2024-07-15',None,       'SRV2018-UC','Dell','PowerEdge R750'),
+    (a_it3,   'IT-003', 'Traffic Management System', 'IT',       'Public Works',    'Traffic Control Center',
+     '2021-06-01', 560000, 10, 20000, 392000, 4,'ACTIVE',      f_general,'2024-03-01','2024-09-01','2026-06-01','TMS2021-01','Econolite','Centracs'),
+    # Infrastructure
+    (a_inf1,  'INF-001','Downtown Traffic Signals',  'INFRASTRUCTURE','Public Works','Downtown District',
+     '2017-04-01', 380000, 15, 15000, 203000, 3,'ACTIVE',      f_general,'2024-02-01','2024-08-01',None,       'SIG2017-DT','Econolite','ASC/3-2100'),
+    (a_inf2,  'INF-002','Stormwater Pump Station #1','INFRASTRUCTURE','Public Works','Elm St & River Rd',
+     '2013-08-01', 445000, 25, 15000, 267000, 2,'ACTIVE',      f_cap,    '2024-01-01','2024-07-01',None,       'STP2013-01','Flygt','S 3201'),
+]
+
+for r in assets:
+    run(r[1], f'''INSERT INTO "{S}"."I_Asset"
+        ("asset_id","asset_number","asset_name","asset_type","department","location",
+         "acquisition_date","acquisition_cost","useful_life_years","salvage_value","current_value",
+         "condition_rating","asset_status","fund_id",
+         "last_inspection_date","next_inspection_date","warranty_expiry",
+         "serial_number","manufacturer","model")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', list(r))
+
+# ── I_WorkOrder ───────────────────────────────────────────────────────────────
+create_table("CREATE I_WorkOrder", f'''
+CREATE COLUMN TABLE "{S}"."I_WorkOrder" (
+  "work_order_id"  VARCHAR(20)  PRIMARY KEY,
+  "wo_number"      VARCHAR(20),
+  "asset_id"       VARCHAR(20),
+  "wo_type"        VARCHAR(20),
+  "priority"       VARCHAR(10),
+  "description"    NVARCHAR(200),
+  "reported_by"    NVARCHAR(60),
+  "assigned_to"    NVARCHAR(60),
+  "department"     NVARCHAR(80),
+  "reported_date"  DATE,
+  "scheduled_date" DATE,
+  "completed_date" DATE,
+  "labor_hours"    DECIMAL(8,2),
+  "labor_cost"     DECIMAL(10,2),
+  "parts_cost"     DECIMAL(10,2),
+  "total_cost"     DECIMAL(10,2),
+  "wo_status"      VARCHAR(20),
+  "failure_type"   VARCHAR(20)
+)''')
+
+# (asset_id, wo_type, priority, description, reported_by, assigned_to, dept,
+#  reported_date, scheduled_date, completed_date, labor_h, labor_$, parts_$, total_$, status, failure_type)
+work_orders = [
+    # Refuse Truck #7 — CRITICAL, emergency, open
+    (a_truck1,'EMERGENCY','CRITICAL','Engine failure — truck inoperable, hydraulic line rupture',
+     'J. Garcia','M. Rodriguez','Sanitation',
+     '2024-03-28','2024-03-28',None,       0,    0,     0,     0,     'OPEN',       'MECHANICAL'),
+    (a_truck1,'CORRECTIVE','HIGH',  'Rear axle bearing replacement after inspection finding',
+     'M. Rodriguez','M. Rodriguez','Sanitation',
+     '2024-01-15','2024-01-22','2024-01-26',16,  960,   2100,  3060,  'COMPLETED',  'WEAR'),
+    # Street Sweeper — corrective
+    (a_truck3,'CORRECTIVE','HIGH',  'Sweeper broom mechanism seized — full broom assembly replacement',
+     'D. Kim','T. Washington','Public Works',
+     '2024-02-10','2024-02-14','2024-02-20',12,  720,   1850,  2570,  'COMPLETED',  'MECHANICAL'),
+    (a_truck3,'PREVENTIVE','MEDIUM','6-month engine service and filter replacement',
+     'T. Washington','T. Washington','Public Works',
+     '2024-04-01','2024-04-05',None,        8,   480,   380,   860,   'IN_PROGRESS','WEAR'),
+    # City Hall HVAC — old unit needs corrective
+    (a_hvac1,'CORRECTIVE','HIGH',   'Compressor cycling failure — refrigerant leak detected',
+     'R. Okonkwo','HVAC Contractor','Facilities',
+     '2024-03-05','2024-03-08','2024-03-15',24,  3600,  4200,  7800,  'COMPLETED',  'MECHANICAL'),
+    (a_hvac1,'CORRECTIVE','CRITICAL','Cooling tower bearing failure — City Hall losing cooling',
+     'R. Okonkwo','HVAC Contractor','Facilities',
+     '2024-04-02','2024-04-02',None,        0,   0,     0,     0,     'IN_PROGRESS','MECHANICAL'),
+    # Generator — inspection + corrective
+    (a_gen1, 'INSPECTION','LOW',    'Annual load test and battery inspection',
+     'R. Okonkwo','M. Rodriguez','Police Dept',
+     '2024-03-15','2024-03-15','2024-03-15',4,   240,   0,     240,   'COMPLETED',  None),
+    (a_gen1, 'CORRECTIVE','MEDIUM', 'Transfer switch contacts pitted — requires replacement',
+     'M. Rodriguez','Electrical Contractor','Police Dept',
+     '2024-03-20','2024-04-01',None,        8,   960,   1200,  2160,  'OPEN',       'ELECTRICAL'),
+    # Wastewater lift station
+    (a_pump2,'EMERGENCY','CRITICAL','Primary pump motor burned out — backup pump engaged',
+     'M. Torres','Pump Contractor','Public Works',
+     '2024-02-20','2024-02-20','2024-03-02',32,  4800,  8500,  13300, 'COMPLETED',  'ELECTRICAL'),
+    (a_pump2,'CORRECTIVE','HIGH',   'Wet well float switch malfunction',
+     'M. Torres','T. Washington','Public Works',
+     '2024-03-25','2024-03-28',None,        6,   360,   285,   645,   'IN_PROGRESS','MECHANICAL'),
+    # Fire Engine — preventive
+    (a_veh1, 'PREVENTIVE','MEDIUM','Annual pump test and apparatus service',
+     'Fire Admin','Fleet Shop','Fire Dept',
+     '2024-01-10','2024-01-15','2024-01-18',16,  960,   520,   1480,  'COMPLETED',  None),
+    # Fire Station 3 Roof — corrective
+    (a_bldg3,'CORRECTIVE','HIGH',  'Roof membrane failure — active leak in apparatus bay',
+     'Fire Admin','Roofing Contractor','Fire Dept',
+     '2024-03-01','2024-03-10','2024-03-22',0,   0,     12500, 12500, 'COMPLETED',  'STRUCTURAL'),
+    (a_bldg3,'CORRECTIVE','MEDIUM','Follow-up inspection — additional membrane patching needed',
+     'Fire Admin','Roofing Contractor','Fire Dept',
+     '2024-04-01','2024-04-15',None,        0,   0,     3200,  3200,  'OPEN',       'STRUCTURAL'),
+    # Traffic signals
+    (a_inf1, 'CORRECTIVE','HIGH',  'Controller cabinet water intrusion — 4 intersections affected',
+     'D. Nguyen','Traffic Ops','Public Works',
+     '2024-02-05','2024-02-07','2024-02-12',8,   480,   1650,  2130,  'COMPLETED',  'ELECTRICAL'),
+    (a_inf1, 'PREVENTIVE','LOW',   'Annual signal timing plan review and firmware update',
+     'D. Nguyen','Traffic Ops','Public Works',
+     '2024-04-01','2024-04-20',None,        16,  960,   0,     960,   'OPEN',       None),
+    # IT server
+    (a_it2,  'CORRECTIVE','MEDIUM','Failed RAID disk replacement — array degraded',
+     'K. Singh','IT Staff','IT Dept',
+     '2024-03-10','2024-03-10','2024-03-11',4,   240,   480,   720,   'COMPLETED',  'MECHANICAL'),
+    # Stormwater pump
+    (a_inf2, 'PREVENTIVE','MEDIUM','Quarterly pump impeller inspection and bearing lubrication',
+     'M. Torres','Pump Contractor','Public Works',
+     '2024-01-15','2024-01-20','2024-01-22',8,   960,   180,   1140,  'COMPLETED',  None),
+    (a_inf2, 'CORRECTIVE','HIGH',  'Discharge gate actuator failure — manual override in use',
+     'M. Torres','Pump Contractor','Public Works',
+     '2024-03-18','2024-03-25',None,        12,  1440,  2800,  4240,  'IN_PROGRESS','MECHANICAL'),
+]
+
+wo_counter = [1]
+def next_wo():
+    n = wo_counter[0]; wo_counter[0] += 1; return f'WO-2024-{n:04d}'
+
+for r in work_orders:
+    (aid, wtype, pri, desc, rep_by, assign, dept,
+     rep_date, sched, comp, lhrs, lcost, pcost, total, status, ftype) = r
+    run(next_wo(), f'''INSERT INTO "{S}"."I_WorkOrder"
+        ("work_order_id","wo_number","asset_id","wo_type","priority","description",
+         "reported_by","assigned_to","department","reported_date","scheduled_date","completed_date",
+         "labor_hours","labor_cost","parts_cost","total_cost","wo_status","failure_type")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+        [id20(), next_wo(), aid, wtype, pri, desc, rep_by, assign, dept,
+         rep_date, sched, comp, lhrs, lcost, pcost, total, status, ftype])
+
+# ── I_PMPlan ─────────────────────────────────────────────────────────────────
+create_table("CREATE I_PMPlan", f'''
+CREATE COLUMN TABLE "{S}"."I_PMPlan" (
+  "plan_id"             VARCHAR(20)  PRIMARY KEY,
+  "asset_id"            VARCHAR(20),
+  "plan_name"           NVARCHAR(100),
+  "frequency"           VARCHAR(20),
+  "last_performed_date" DATE,
+  "next_due_date"       DATE,
+  "estimated_hours"     DECIMAL(6,2),
+  "estimated_cost"      DECIMAL(10,2),
+  "assigned_to"         NVARCHAR(60),
+  "task_description"    NVARCHAR(200),
+  "plan_status"         VARCHAR(20),
+  "compliance_required" VARCHAR(1)
+)''')
+
+# (asset_id, plan_name, frequency, last_performed, next_due, est_hrs, est_cost, assigned_to, task_desc, compliance)
+pm_plans = [
+    # Refuse Truck #7 — overdue (critical asset)
+    (a_truck1,'Monthly Safety Inspection',  'MONTHLY',  '2024-02-01','2024-03-01',2,   180, 'Fleet Shop',   'Brake, lights, hydraulic, tire inspection','Y'),
+    (a_truck1,'Annual DOT Certification',   'ANNUAL',   '2023-03-15','2024-03-15',4,   350, 'Fleet Shop',   'Full DOT compliance inspection and certification','Y'),
+    # Refuse Truck #12
+    (a_truck2,'Monthly Safety Inspection',  'MONTHLY',  '2024-03-15','2024-04-15',2,   180, 'Fleet Shop',   'Brake, lights, hydraulic, tire inspection','Y'),
+    (a_truck2,'6-Month Engine Service',     'BIANNUAL', '2023-10-01','2024-04-01',4,   520, 'Fleet Shop',   'Oil, filters, belts, fluid check','N'),
+    # Street Sweeper
+    (a_truck3,'Quarterly PM Service',       'QUARTERLY','2024-01-10','2024-04-10',6,   620, 'Fleet Shop',   'Engine service, broom adjustment, water system flush','N'),
+    # City Hall HVAC — overdue
+    (a_hvac1, 'Quarterly Filter Change',    'QUARTERLY','2023-12-01','2024-03-01',3,   240, 'HVAC Contractor','Air filter replacement, coil cleaning, refrigerant check','N'),
+    (a_hvac1, 'Annual Comprehensive PM',    'ANNUAL',   '2023-06-01','2024-06-01',16,  2400,'HVAC Contractor','Full system PM — compressor, cooling tower, controls','Y'),
+    # Community Center HVAC
+    (a_hvac2, 'Quarterly Filter Change',    'QUARTERLY','2024-01-15','2024-04-15',2,   180, 'HVAC Contractor','Filter change and system check','N'),
+    # Generator
+    (a_gen1,  'Monthly Exercise Test',      'MONTHLY',  '2024-03-15','2024-04-15',2,   240, 'M. Rodriguez', '30-minute load test, battery, fuel level','Y'),
+    (a_gen1,  'Annual Load Bank Test',      'ANNUAL',   '2024-03-15','2025-03-15',8,   1200,'Electrical Contractor','Full load bank test and transfer switch PM','Y'),
+    # Water pump station
+    (a_pump1, 'Monthly Pump Inspection',    'MONTHLY',  '2024-03-01','2024-04-01',4,   480, 'T. Washington','Bearing temp, vibration, flow rate, leak check','Y'),
+    (a_pump1, 'Annual Impeller Inspection', 'ANNUAL',   '2023-09-01','2024-09-01',16,  3200,'Pump Contractor','Pull pump, inspect impeller and wear rings, realign','Y'),
+    # Wastewater lift station — overdue
+    (a_pump2, 'Monthly Wet Well Inspection','MONTHLY',  '2024-02-01','2024-03-01',3,   360, 'T. Washington','Float switches, level sensors, pump runtime','Y'),
+    (a_pump2, 'Quarterly Pump PM',          'QUARTERLY','2024-01-22','2024-04-22',8,   960, 'Pump Contractor','Bearing lubrication, seal inspection, control panel','Y'),
+    # Fire engine
+    (a_veh1,  'Annual Apparatus Service',   'ANNUAL',   '2024-01-18','2025-01-18',16,  1800,'Fleet Shop',   'Full apparatus PM per NFPA 1911','Y'),
+    (a_veh1,  'Weekly Driver Inspection',   'WEEKLY',   '2024-04-01','2024-04-08',1,   60,  'Fire Crew',    'Driver daily inspection checklist','Y'),
+    # Fire ladder
+    (a_veh2,  'Annual Aerial Test',         'ANNUAL',   '2023-11-01','2024-11-01',24,  3500,'Fleet Shop',   'Annual aerial apparatus test per NFPA 1914','Y'),
+    (a_veh2,  'Monthly Ladder PM',          'MONTHLY',  '2024-03-01','2024-04-01',4,   480, 'Fleet Shop',   'Aerial ladder lubrication, hydraulic system','Y'),
+    # Stormwater pump — overdue
+    (a_inf2,  'Quarterly Pump PM',          'QUARTERLY','2024-01-22','2024-04-22',8,   960, 'Pump Contractor','Impeller, bearings, discharge gate function','Y'),
+    (a_inf2,  'Annual Wet Pit Cleaning',    'ANNUAL',   '2023-06-01','2024-06-01',16,  2400,'Pump Contractor','Full wet pit dewatering and inspection','Y'),
+    # Traffic signals
+    (a_inf1,  'Annual Signal PM',           'ANNUAL',   '2023-04-01','2024-04-01',32,  3800,'Traffic Ops',  'Cabinet inspection, LED lamp check, timing audit','N'),
+    # IT
+    (a_it1,   'Quarterly Network Audit',    'QUARTERLY','2024-01-01','2024-04-01',4,   480, 'IT Staff',     'Firmware updates, port security, log review','N'),
+    (a_it2,   'Annual Server PM',           'ANNUAL',   '2023-11-01','2024-11-01',8,   960, 'IT Staff',     'Hardware diagnostics, backup verification, OS patching','N'),
+]
+
+for r in pm_plans:
+    (aid, pname, freq, last, nxt, hrs, cost, assign, task, comp) = r
+    run(pname[:20], f'''INSERT INTO "{S}"."I_PMPlan"
+        ("plan_id","asset_id","plan_name","frequency","last_performed_date","next_due_date",
+         "estimated_hours","estimated_cost","assigned_to","task_description","plan_status","compliance_required")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
+        [id20(), aid, pname, freq, last, nxt, hrs, cost, assign, task, 'ACTIVE', comp])
+
+# ── I_FailureEvent ────────────────────────────────────────────────────────────
+create_table("CREATE I_FailureEvent", f'''
+CREATE COLUMN TABLE "{S}"."I_FailureEvent" (
+  "failure_id"       VARCHAR(20)  PRIMARY KEY,
+  "asset_id"         VARCHAR(20),
+  "work_order_id"    VARCHAR(20),
+  "failure_date"     DATE,
+  "failure_type"     VARCHAR(20),
+  "failure_description" NVARCHAR(200),
+  "downtime_hours"   DECIMAL(8,2),
+  "repair_cost"      DECIMAL(10,2),
+  "root_cause"       NVARCHAR(200),
+  "is_recurring"     VARCHAR(1),
+  "prevented_by_pm"  VARCHAR(1)
+)''')
+
+failure_events = [
+    (a_truck1,'MECHANICAL','2024-01-15','WEAR',          'Rear axle bearing failure',            8,  3060,'End-of-life wear — asset past useful service life', 'Y','N'),
+    (a_truck1,'MECHANICAL','2024-03-28','MECHANICAL',    'Engine failure — hydraulic rupture',   96, 0,   'Progressive deterioration — engine not replaced at overhaul interval','Y','N'),
+    (a_truck3,'MECHANICAL','2024-02-10','MECHANICAL',    'Sweeper broom mechanism seized',       16, 2570,'Debris ingestion — PM inspection interval too long', 'N','Y'),
+    (a_hvac1, 'MECHANICAL','2024-03-05','MECHANICAL',    'Compressor cycling failure',           48, 7800,'Refrigerant leak undetected between PM visits',     'Y','Y'),
+    (a_hvac1, 'MECHANICAL','2024-04-02','MECHANICAL',    'Cooling tower bearing failure',        0,  0,   'Vibration signature missed at last PM visit',       'Y','Y'),
+    (a_pump2, 'ELECTRICAL','2024-02-20','ELECTRICAL',    'Primary pump motor burned out',        72, 13300,'Insulation degradation — motor age 9 years',       'N','N'),
+    (a_pump2, 'MECHANICAL','2024-03-25','MECHANICAL',    'Float switch malfunction',             4,  645, 'Float corroded — saltwater exposure',               'N','Y'),
+    (a_gen1,  'ELECTRICAL','2023-12-10','ELECTRICAL',    'Transfer switch contact failure',      12, 2160,'Pitted contacts from repeated switching cycles',   'N','Y'),
+    (a_bldg3, 'STRUCTURAL','2024-03-01','STRUCTURAL',    'Roof membrane failure — active leak',  0,  12500,'Age-related membrane degradation, past design life','N','N'),
+    (a_inf1,  'ELECTRICAL','2024-02-05','ELECTRICAL',    'Controller cabinet water intrusion',   18, 2130,'Gasket failure on aging cabinet door seal',         'Y','N'),
+    (a_inf2,  'MECHANICAL','2023-11-05','MECHANICAL',    'Discharge gate actuator binding',      36, 1800,'Lack of lubrication — quarterly PM missed',         'Y','Y'),
+    (a_it2,   'MECHANICAL','2024-03-10','MECHANICAL',    'RAID array disk failure',              2,  720, 'Disk end-of-life — SMART warning ignored',          'N','N'),
+]
+
+for r in failure_events:
+    (aid, wotype, fdate, ftype, fdesc, dhrs, rcost, rcause, recurring, pm_prev) = r
+    run(fdate, f'''INSERT INTO "{S}"."I_FailureEvent"
+        ("failure_id","asset_id","work_order_id","failure_date","failure_type","failure_description",
+         "downtime_hours","repair_cost","root_cause","is_recurring","prevented_by_pm")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)''',
+        [id20(), aid, None, fdate, ftype, fdesc, dhrs, rcost, rcause, recurring, pm_prev])
+
+# ── V_AssetHealth ─────────────────────────────────────────────────────────────
+run("V_AssetHealth", f'''
+CREATE OR REPLACE VIEW "{S}"."V_AssetHealth" AS
+SELECT
+  a."asset_id", a."asset_number", a."asset_name", a."asset_type",
+  a."department", a."location", a."acquisition_date", a."acquisition_cost",
+  a."useful_life_years", a."salvage_value", a."current_value",
+  a."condition_rating", a."asset_status", a."fund_id",
+  a."last_inspection_date", a."next_inspection_date",
+  a."serial_number", a."manufacturer", a."model",
+  COUNT(DISTINCT CASE WHEN wo."wo_status" IN ('OPEN','IN_PROGRESS') THEN wo."work_order_id" END) AS OPEN_WO_COUNT,
+  COUNT(DISTINCT CASE WHEN pm."next_due_date" < CURRENT_DATE THEN pm."plan_id" END)              AS OVERDUE_PM_COUNT,
+  COUNT(DISTINCT fe."failure_id")                                                                 AS TOTAL_FAILURES,
+  COALESCE(SUM(CASE WHEN wo."wo_status" = 'COMPLETED'
+    AND wo."completed_date" >= ADD_MONTHS(CURRENT_DATE,-12) THEN wo."total_cost" ELSE 0 END), 0)  AS MAINT_COST_YTD,
+  CASE
+    WHEN a."condition_rating" = 1 THEN 'CRITICAL'
+    WHEN a."condition_rating" = 2
+      AND COUNT(DISTINCT CASE WHEN wo."wo_status" IN ('OPEN','IN_PROGRESS') THEN wo."work_order_id" END) > 0 THEN 'CRITICAL'
+    WHEN a."condition_rating" = 2 THEN 'POOR'
+    WHEN COUNT(DISTINCT CASE WHEN pm."next_due_date" < CURRENT_DATE THEN pm."plan_id" END) > 1 THEN 'POOR'
+    WHEN a."condition_rating" = 3
+      AND COUNT(DISTINCT CASE WHEN wo."wo_type" = 'EMERGENCY' AND wo."wo_status" != 'COMPLETED' THEN wo."work_order_id" END) > 0 THEN 'POOR'
+    WHEN a."condition_rating" <= 3 THEN 'FAIR'
+    ELSE 'GOOD'
+  END AS HEALTH_STATUS
+FROM "{S}"."I_Asset" a
+LEFT JOIN "{S}"."I_WorkOrder"   wo ON wo."asset_id" = a."asset_id"
+LEFT JOIN "{S}"."I_PMPlan"      pm ON pm."asset_id" = a."asset_id" AND pm."plan_status" = 'ACTIVE'
+LEFT JOIN "{S}"."I_FailureEvent" fe ON fe."asset_id" = a."asset_id"
+GROUP BY
+  a."asset_id", a."asset_number", a."asset_name", a."asset_type",
+  a."department", a."location", a."acquisition_date", a."acquisition_cost",
+  a."useful_life_years", a."salvage_value", a."current_value",
+  a."condition_rating", a."asset_status", a."fund_id",
+  a."last_inspection_date", a."next_inspection_date",
+  a."serial_number", a."manufacturer", a."model"''')
+
 # ── Final row counts ──────────────────────────────────────────────────────────
 print(f"\n{'='*65}")
 print(f"  DONE  ✓ {ok}  ✗ {err}  Total: {ok+err}")
@@ -1340,6 +1693,7 @@ for t in [
     'I_Vendor','I_Contract','I_PurchaseOrder','I_Invoice',
     'I_BudgetLine','I_JournalEntry','I_CloseTask','I_InterfundTransfer',
     'I_CapitalProject','I_ChangeOrder','I_ProjectFunding','I_Milestone',
+    'I_Asset','I_WorkOrder','I_PMPlan','I_FailureEvent',
 ]:
     cur.execute(f'SELECT COUNT(*) FROM "{S}"."{t}"')
     cnt = cur.fetchone()[0]

@@ -151,6 +151,48 @@ export const TOOLS = [
     },
   },
 
+  // ── Phase 2 Sprint 12: Assets & Plant Maintenance ────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'get_asset_kpis',
+      description: 'Get asset management KPIs: total assets, total replacement value, critical/poor condition count, open work orders, emergency work orders, overdue preventive maintenance plans, maintenance cost YTD. Use for fleet/facility/infrastructure health overview questions.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_asset_health',
+      description: 'Get per-asset health dashboard: condition rating (1-5), open work order count, overdue PM count, total failures, maintenance cost YTD, and overall health status (GOOD/FAIR/POOR/CRITICAL). Use for questions about which assets need attention, worst-condition assets, high-maintenance assets.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_work_orders',
+      description: 'Get all work orders with type (EMERGENCY/CORRECTIVE/PREVENTIVE/INSPECTION), priority (CRITICAL/HIGH/MEDIUM/LOW), labor and parts cost, age in days, assigned technician, asset info. Use for maintenance backlog questions, emergency repairs, high-cost work orders, overdue work orders.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_pm_compliance',
+      description: 'Get preventive maintenance plan compliance: PM status (OVERDUE/DUE_SOON/ON_SCHEDULE), days overdue, frequency (MONTHLY/QUARTERLY/ANNUAL etc.), estimated cost, assigned technician per asset. Use for PM compliance rate questions, overdue maintenance, which assets are missing scheduled PMs.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_failure_analysis',
+      description: 'Get asset failure event log: failure type (MECHANICAL/ELECTRICAL/STRUCTURAL/WEAR/OPERATOR_ERROR), downtime hours, repair cost, recurring failure flag, whether failure was PM-preventable. Use for failure pattern analysis, recurring failure identification, downtime cost, PM ROI questions.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+
   // ── Phase 2 Sprint 11: Capital Projects & CIP ────────────────────────────────
   {
     type: 'function',
@@ -224,6 +266,7 @@ export const TOOLS = [
 import { GrantsService }      from '../grants/grants.service.js';
 import { FundsService }       from '../funds/funds.service.js';
 import { CapitalService }     from '../capital/capital.service.js';
+import { AssetsService }      from '../assets/assets.service.js';
 import { OutcomesService }    from '../outcomes/outcomes.service.js';
 import { ForecastService }    from '../forecast/forecast.service.js';
 import { ProcurementService } from '../procurement/procurement.service.js';
@@ -257,6 +300,12 @@ export const TOOL_EXECUTORS = {
   get_finance_kpis:          () => FinanceService.getKPIs(),
   get_budget_variance:       () => FinanceService.getBudgetVariance(),
   get_close_readiness:       () => FinanceService.getCloseReadiness(),
+  // Assets & Plant Maintenance (Phase 2 Sprint 12)
+  get_asset_kpis:            () => AssetsService.getKPIs(),
+  get_asset_health:          () => AssetsService.getAssets(),
+  get_work_orders:           () => AssetsService.getWorkOrders(),
+  get_pm_compliance:         () => AssetsService.getPMPlans(),
+  get_failure_analysis:      () => AssetsService.getFailures(),
   // Capital Projects & CIP (Phase 2 Sprint 11)
   get_capital_kpis:          () => CapitalService.getKPIs(),
   get_project_health:        () => CapitalService.getProjects(),

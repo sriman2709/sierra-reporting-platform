@@ -15,6 +15,7 @@ const NAV = [
   { to: '/finance',           label: 'Finance Controller',    icon: '🏦' },
   { to: '/procurement',       label: 'Procurement & AP',      icon: '🛒' },
   { to: '/capital-projects',  label: 'Capital Projects & CIP',icon: '🏗' },
+  { to: '/assets',            label: 'Assets & Maintenance',  icon: '🔧' },
   { section: 'AI' },
   { to: '/ai',           label: 'Sierra Intelligence',   icon: '✦'  },
   { section: 'Resources' },
