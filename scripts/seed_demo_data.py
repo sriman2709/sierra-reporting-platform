@@ -100,13 +100,13 @@ print("── Funds ──")
 for r in [
     # fund_id, code, name, type, fy, appropriation, revenues_ytd, expenditures_ytd,
     #   ending_bal, restricted, committed, assigned, unassigned, is_grant, gasb54
-    (f_general,'GF-001','General Fund',              'GENERAL',        '2024',12500000,8200000, 7900000, 12800000,0,       0,       2000000,10800000,yn(0),'GASB-54'),
+    (f_general,'GF-001','General Fund',              'GENERAL',        '2024',12500000,8200000, 7900000, 12800000,0,       0,       2000000,10800000,0,'GASB-54'),
     # CDBG: 2.55M spend against 2.4M appropriation → OVER BUDGET (106%)
-    (f_cdbg,   'SP-101','CDBG Special Revenue Fund', 'SPECIAL_REVENUE','2024',2400000, 2550000, 2550000, 2400000, 2400000, 0,       0,       0,       yn(1),'GASB-54'),
-    (f_title1, 'SP-102','Title I Education Fund',    'SPECIAL_REVENUE','2024',3200000, 2100000, 2050000, 3250000, 3250000, 0,       0,       0,       yn(1),'GASB-54'),
+    (f_cdbg,   'SP-101','CDBG Special Revenue Fund', 'SPECIAL_REVENUE','2024',2400000, 2550000, 2550000, 2400000, 2400000, 0,       0,       0,       1,'GASB-54'),
+    (f_title1, 'SP-102','Title I Education Fund',    'SPECIAL_REVENUE','2024',3200000, 2100000, 2050000, 3250000, 3250000, 0,       0,       0,       1,'GASB-54'),
     # WIOA: 1.62M spend against 1.5M appropriation → OVER BUDGET (108%)
-    (f_wf,     'SP-103','WIOA Workforce Fund',       'SPECIAL_REVENUE','2024',1500000, 1620000, 1620000, 1380000, 1380000, 0,       0,       0,       yn(1),'GASB-54'),
-    (f_cap,    'CP-001','Capital Projects Fund',     'CAPITAL_PROJECTS','2024',5000000, 500000,  320000,  5180000, 0,       5180000, 0,       0,       yn(0),'GASB-54'),
+    (f_wf,     'SP-103','WIOA Workforce Fund',       'SPECIAL_REVENUE','2024',1500000, 1620000, 1620000, 1380000, 1380000, 0,       0,       0,       1,'GASB-54'),
+    (f_cap,    'CP-001','Capital Projects Fund',     'CAPITAL_PROJECTS','2024',5000000, 500000,  320000,  5180000, 0,       5180000, 0,       0,       0,'GASB-54'),
 ]:
     run(r[2], f'''INSERT INTO "{S}"."I_Fund"
         ("fund_id","fund_code","fund_name","fund_type","fiscal_year","beginning_balance","revenues_ytd",
