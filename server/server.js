@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes      from './modules/auth/auth.routes.js';
 import grantsRoutes    from './modules/grants/grants.routes.js';
@@ -11,14 +13,30 @@ import auditRoutes     from './modules/audit/audit.routes.js';
 import forecastRoutes  from './modules/forecast/forecast.routes.js';
 import aiRoutes        from './modules/ai/ai.routes.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app  = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+// ── CORS: allow Vite dev server locally; in production same-origin serves everything ──
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4000',
+  `https://public-sector-reporting.azurewebsites.net`,
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    // allow requests with no origin (curl, Postman, same-origin in prod)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, true); // permissive for demo — lock down post-launch
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
+// ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }));
 
+// ── API routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',       authRoutes);
 app.use('/api/grants',     grantsRoutes);
 app.use('/api/funds',      fundsRoutes);
@@ -27,5 +45,14 @@ app.use('/api/outcomes',   outcomesRoutes);
 app.use('/api/audit',      auditRoutes);
 app.use('/api/forecast',   forecastRoutes);
 app.use('/api/ai',         aiRoutes);
+
+// ── Serve React build in production ──────────────────────────────────────────
+const clientDist = path.join(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientDist));
+
+// SPA fallback — send index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 app.listen(PORT, () => console.log(`\n  Sierra API → http://localhost:${PORT}\n`));

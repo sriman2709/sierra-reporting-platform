@@ -2,11 +2,16 @@
   "name": "sierra-reporting-platform",
   "version": "1.0.0",
   "description": "SLED Public Sector Reporting Platform",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "start": "node server/server.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node --watch server/server.js",
     "client": "cd client && npm run dev",
-    "start": "node server/server.js"
+    "build": "cd client && npm install && npm run build",
+    "postinstall": "cd server && npm install && cd ../client && npm install && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

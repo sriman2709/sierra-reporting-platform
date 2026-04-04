@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
-const API_URL = 'http://localhost:4000/api/ai/query';
+const API_URL = '/api/ai/query';
 const token   = () => localStorage.getItem('token');
 
 const COLORS = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
