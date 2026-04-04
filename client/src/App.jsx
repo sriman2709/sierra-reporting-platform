@@ -11,9 +11,10 @@ import Audit       from './pages/Audit';
 import Forecast    from './pages/Forecast';
 import SACGuide    from './pages/SACGuide';
 import AIChat      from './pages/AIChat';
-import Procurement from './pages/Procurement';
-import Finance     from './pages/Finance';
-import Roadmap     from './pages/Roadmap';
+import Procurement    from './pages/Procurement';
+import Finance        from './pages/Finance';
+import CapitalProjects from './pages/CapitalProjects';
+import Roadmap        from './pages/Roadmap';
 
 const PAGE_TITLES = {
   '/':             'Platform Overview',
@@ -25,9 +26,10 @@ const PAGE_TITLES = {
   '/forecast':     'Financial Forecast',
   '/guide':        'SAC Development Guide',
   '/ai':           'Sierra Intelligence · AI Analyst',
-  '/procurement':  'Procurement & AP Intelligence',
-  '/finance':      'Finance Controller',
-  '/roadmap':      'Enterprise Roadmap',
+  '/procurement':        'Procurement & AP Intelligence',
+  '/finance':            'Finance Controller',
+  '/capital-projects':   'Capital Projects & CIP',
+  '/roadmap':            'Enterprise Roadmap',
 };
 
 function RequireAuth() {
@@ -52,9 +54,10 @@ export default function App() {
           <Route path="/forecast"  element={<Forecast />} />
           <Route path="/guide"       element={<SACGuide />} />
           <Route path="/ai"          element={<AIChat />} />
-          <Route path="/procurement" element={<Procurement />} />
-          <Route path="/finance"     element={<Finance />} />
-          <Route path="/roadmap"     element={<Roadmap />} />
+          <Route path="/procurement"      element={<Procurement />} />
+          <Route path="/finance"          element={<Finance />} />
+          <Route path="/capital-projects" element={<CapitalProjects />} />
+          <Route path="/roadmap"          element={<Roadmap />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

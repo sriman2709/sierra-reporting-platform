@@ -14,6 +14,7 @@ import forecastRoutes    from './modules/forecast/forecast.routes.js';
 import aiRoutes          from './modules/ai/ai.routes.js';
 import procurementRoutes from './modules/procurement/procurement.routes.js';
 import financeRoutes     from './modules/finance/finance.routes.js';
+import capitalRoutes     from './modules/capital/capital.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app  = express();
@@ -49,6 +50,7 @@ app.use('/api/forecast',    forecastRoutes);
 app.use('/api/ai',          aiRoutes);
 app.use('/api/procurement', procurementRoutes);
 app.use('/api/finance',     financeRoutes);
+app.use('/api/capital',     capitalRoutes);
 
 // ── Serve React build in production ──────────────────────────────────────────
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

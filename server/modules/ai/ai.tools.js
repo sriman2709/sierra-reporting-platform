@@ -151,6 +151,48 @@ export const TOOLS = [
     },
   },
 
+  // ── Phase 2 Sprint 11: Capital Projects & CIP ────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'get_capital_kpis',
+      description: 'Get Capital Improvement Plan (CIP) high-level KPIs: total CIP budget, total spent to date, total remaining, active/on-hold/completed project counts, red/yellow/green health counts, pending change orders, approved change order cost impact. Use for capital program overview, CIP portfolio summary questions.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_project_health',
+      description: 'Get per-project health dashboard: spend %, committed %, budget remaining, change order count and cost impact, milestone completion rate, at-risk milestone count, and overall health status (GREEN/YELLOW/RED). Use for questions about which projects are over budget, behind schedule, at risk, or need attention.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_change_orders',
+      description: 'Get all capital project change orders: reason (SCOPE_CHANGE/UNFORESEEN_CONDITIONS/DESIGN_ERROR/OWNER_REQUEST/WEATHER/REGULATORY), cost impact (positive = cost increase), schedule impact in days, approval status (PENDING/APPROVED/REJECTED). Use for questions about cost overruns, schedule slippage, change order backlog, most impacted projects.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_milestone_status',
+      description: 'Get all capital project milestones with status (COMPLETED/IN_PROGRESS/AT_RISK/NOT_STARTED), completion %, planned vs actual dates, milestone type (DESIGN/PERMITTING/CONSTRUCTION/INSPECTION/CLOSEOUT). Use for schedule tracking, at-risk milestone identification, project phase progress questions.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_cip_funding',
+      description: 'Get capital project funding sources: source type (BOND/GRANT/GENERAL_FUND/SPECIAL_ASSESSMENT/DEVELOPER_CONTRIBUTION), allocated amount, amount drawn, draw % per project. Use for questions about grant-funded vs bond-funded projects, funding utilization, undrawn balances, funding mix analysis.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+
   // ── Phase 1 Sprint 10: Finance & Budget Controller ─────────────────────────
   {
     type: 'function',
@@ -181,6 +223,7 @@ export const TOOLS = [
 // Maps tool name → service call
 import { GrantsService }      from '../grants/grants.service.js';
 import { FundsService }       from '../funds/funds.service.js';
+import { CapitalService }     from '../capital/capital.service.js';
 import { OutcomesService }    from '../outcomes/outcomes.service.js';
 import { ForecastService }    from '../forecast/forecast.service.js';
 import { ProcurementService } from '../procurement/procurement.service.js';
@@ -214,4 +257,10 @@ export const TOOL_EXECUTORS = {
   get_finance_kpis:          () => FinanceService.getKPIs(),
   get_budget_variance:       () => FinanceService.getBudgetVariance(),
   get_close_readiness:       () => FinanceService.getCloseReadiness(),
+  // Capital Projects & CIP (Phase 2 Sprint 11)
+  get_capital_kpis:          () => CapitalService.getKPIs(),
+  get_project_health:        () => CapitalService.getProjects(),
+  get_change_orders:         () => CapitalService.getChangeOrders(),
+  get_milestone_status:      () => CapitalService.getMilestones(),
+  get_cip_funding:           () => CapitalService.getFunding(),
 };

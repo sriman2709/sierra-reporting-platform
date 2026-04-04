@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 
 const ROLES = {
-  finance_analyst: ['grants','funds','forecast','audit','procurement','finance'],
+  finance_analyst: ['grants','funds','forecast','audit','procurement','finance','capital'],
   grants_manager:  ['grants','subawards','audit','procurement'],
   program_manager: ['outcomes','grants'],
-  executive:       ['grants','funds','subawards','outcomes','audit','forecast','procurement','finance'],
-  auditor:         ['audit','grants','subawards','procurement','finance'],
+  executive:       ['grants','funds','subawards','outcomes','audit','forecast','procurement','finance','capital'],
+  auditor:         ['audit','grants','subawards','procurement','finance','capital'],
   public_user:     ['grants'],
 };
 

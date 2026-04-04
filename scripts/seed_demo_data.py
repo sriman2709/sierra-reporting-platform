@@ -49,6 +49,7 @@ print("=" * 65)
 # ── Clear all tables (order matters — child before parent) ─────────────────
 print("\n  Clearing existing data…")
 for t in [
+    'I_Milestone','I_ProjectFunding','I_ChangeOrder','I_CapitalProject',
     'I_ForecastEntry','I_ScenarioAssumption','I_ScenarioVersion',
     'I_FundBalanceClassification','I_CostToServeUnit','I_OutcomeActual',
     'I_OutcomeTarget','I_OutcomeMetric','I_CorrectiveAction',
@@ -948,6 +949,368 @@ SELECT
   ct."completion_date", ct."task_status", ct."priority", ct."task_category"
 FROM "{S}"."I_CloseTask" ct''')
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPRINT 11 — Capital Projects & CIP
+# ═══════════════════════════════════════════════════════════════════════════════
+print("\n  Sprint 11: Capital Projects & CIP…")
+
+# ── I_CapitalProject ──────────────────────────────────────────────────────────
+run("CREATE I_CapitalProject", f'''
+CREATE COLUMN TABLE "{S}"."I_CapitalProject" (
+  "project_id"          VARCHAR(20)    PRIMARY KEY,
+  "project_number"      VARCHAR(20),
+  "project_name"        NVARCHAR(120),
+  "project_type"        VARCHAR(20),
+  "department"          NVARCHAR(80),
+  "description"         NVARCHAR(300),
+  "total_budget"        DECIMAL(15,2),
+  "spent_to_date"       DECIMAL(15,2),
+  "encumbrances"        DECIMAL(15,2),
+  "project_status"      VARCHAR(20),
+  "phase"               VARCHAR(20),
+  "start_date"          DATE,
+  "expected_completion" DATE,
+  "actual_completion"   DATE,
+  "fund_id"             VARCHAR(20),
+  "grant_id"            VARCHAR(20),
+  "priority"            VARCHAR(10),
+  "project_manager"     NVARCHAR(60)
+)''')
+
+# Stable project IDs
+cp_main    = id20(); cp_cityhall = id20(); cp_river   = id20()
+cp_wwater  = id20(); cp_fiber    = id20(); cp_bridge  = id20()
+cp_comm    = id20(); cp_trail    = id20(); cp_water   = id20()
+cp_library = id20(); cp_street   = id20(); cp_fire    = id20()
+
+# (project_id, project_number, project_name, project_type, department, description,
+#  total_budget, spent_to_date, encumbrances, project_status, phase,
+#  start_date, expected_completion, actual_completion, fund_id, grant_id, priority, project_manager)
+capital_projects = [
+    (cp_main,    'CIP-2023-001', 'Main Street Reconstruction',        'ROAD',     'Public Works',
+     'Full reconstruction of Main St — pavement, curbs, drainage, ADA ramps',
+     8500000,  9520000, 180000, 'ACTIVE',    'CONSTRUCTION', '2023-03-01','2024-12-31',None,     f_cap,    g_cdbg,    'HIGH',   'D. Nguyen'),
+    (cp_cityhall,'CIP-2023-002', 'City Hall Renovation',              'BUILDING', 'Facilities',
+     'HVAC, electrical, seismic retrofitting, ADA compliance for 1962 City Hall',
+     12000000, 9800000, 950000, 'ACTIVE',    'CONSTRUCTION', '2023-06-01','2025-06-30',None,     f_cap,    None,      'HIGH',   'R. Okonkwo'),
+    (cp_river,   'CIP-2023-003', 'Riverview Park Expansion',          'PARKS',    'Parks & Rec',
+     'New athletic fields, playground, restroom facilities at Riverview Park',
+     3200000,  2100000, 310000, 'ACTIVE',    'CONSTRUCTION', '2023-09-01','2024-09-30',None,     f_cap,    g_home,    'MEDIUM', 'L. Patel'),
+    (cp_wwater,  'CIP-2024-001', 'Wastewater Treatment Plant Upgrade','UTILITY',  'Public Works',
+     'Capacity expansion and regulatory compliance upgrade for WWTP',
+     18000000,  980000, 620000, 'ACTIVE',    'DESIGN',       '2024-01-15','2027-06-30',None,     f_cap,    g_slfrf,   'HIGH',   'M. Torres'),
+    (cp_fiber,   'CIP-2023-004', 'Municipal Fiber Network Phase 1',   'IT',       'Information Technology',
+     'Dark fiber backbone connecting City Hall, Police, Fire, and Libraries',
+     4500000,  4050000, 275000, 'ACTIVE',    'CONSTRUCTION', '2023-04-01','2024-10-31',None,     f_cap,    None,      'MEDIUM', 'K. Singh'),
+    (cp_bridge,  'CIP-2022-001', 'Oak Ave Bridge Rehabilitation',     'BRIDGE',   'Public Works',
+     'Structural repairs, deck resurfacing, guardrail replacement on Oak Ave bridge',
+     7000000,  5600000, 820000, 'ACTIVE',    'CONSTRUCTION', '2022-10-01','2024-08-31',None,     f_cap,    None,      'HIGH',   'D. Nguyen'),
+    (cp_comm,    'CIP-2022-002', 'Community Center Remodel',          'BUILDING', 'Parks & Rec',
+     'Interior remodel, ADA upgrades, new HVAC for Eastside Community Center',
+     2800000,  2750000,      0, 'COMPLETED', 'CLOSEOUT',     '2022-06-01','2023-12-31','2023-11-15',f_cap, None,      'MEDIUM', 'L. Patel'),
+    (cp_trail,   'CIP-2024-002', 'Creekside Linear Trail Extension',  'PARKS',    'Parks & Rec',
+     '2.4-mile paved trail extension with lighting, benches, and bike repair stations',
+     1500000,   620000, 180000, 'ACTIVE',    'CONSTRUCTION', '2024-03-01','2024-12-15',None,     f_cap,    g_home,    'LOW',    'L. Patel'),
+    (cp_water,   'CIP-2023-005', 'Downtown Water Main Replacement',   'UTILITY',  'Public Works',
+     'Replace 1960s-era cast-iron water mains in 8-block downtown corridor',
+     5500000,  3850000, 980000, 'ACTIVE',    'CONSTRUCTION', '2023-11-01','2024-11-30',None,     f_cap,    None,      'HIGH',   'M. Torres'),
+    (cp_library, 'CIP-2024-003', 'New Central Library',               'BUILDING', 'Library Services',
+     '45,000 sq ft new central library with community meeting rooms and maker space',
+     22000000,  420000, 180000, 'PLANNING',  'PLANNING',     '2024-07-01','2028-06-30',None,     f_cap,    g_cdbg,    'MEDIUM', 'R. Okonkwo'),
+    (cp_street,  'CIP-2024-004', 'Downtown Streetscape Improvement',  'ROAD',     'Public Works',
+     'Sidewalk widening, new streetlights, trees, bike lanes on 5 downtown blocks',
+     3800000,  2660000, 570000, 'ACTIVE',    'CONSTRUCTION', '2024-02-01','2024-12-31',None,     f_cap,    None,      'MEDIUM', 'D. Nguyen'),
+    (cp_fire,    'CIP-2024-005', 'Fire Station #4 Rebuild',           'BUILDING', 'Fire Department',
+     'Full demolition and rebuild of aging Station #4 with modern apparatus bays',
+     9500000,  1140000, 380000, 'ACTIVE',    'DESIGN',       '2024-04-01','2026-06-30',None,     f_cap,    None,      'HIGH',   'R. Okonkwo'),
+]
+
+for r in capital_projects:
+    (pid, pnum, pname, ptype, dept, desc,
+     budget, spent, enc, status, phase,
+     start, exp_comp, act_comp, fund_id, grant_id, priority, pm) = r
+    run(pnum, f'''INSERT INTO "{S}"."I_CapitalProject"
+        ("project_id","project_number","project_name","project_type","department","description",
+         "total_budget","spent_to_date","encumbrances","project_status","phase",
+         "start_date","expected_completion","actual_completion",
+         "fund_id","grant_id","priority","project_manager")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+        [pid, pnum, pname, ptype, dept, desc,
+         budget, spent, enc, status, phase,
+         start, exp_comp, act_comp, fund_id, grant_id, priority, pm])
+
+# ── I_ChangeOrder ─────────────────────────────────────────────────────────────
+run("CREATE I_ChangeOrder", f'''
+CREATE COLUMN TABLE "{S}"."I_ChangeOrder" (
+  "change_order_id"      VARCHAR(20)   PRIMARY KEY,
+  "project_id"           VARCHAR(20),
+  "co_number"            VARCHAR(20),
+  "description"          NVARCHAR(200),
+  "reason"               VARCHAR(30),
+  "cost_impact"          DECIMAL(15,2),
+  "schedule_impact_days" INTEGER,
+  "approved_by"          NVARCHAR(60),
+  "approved_date"        DATE,
+  "submitted_date"       DATE,
+  "status"               VARCHAR(20)
+)''')
+
+change_orders = [
+    # Main St — over budget: 3 approved COs
+    (cp_main, 'CO-001', 'Unanticipated underground utility conflicts requiring rerouting', 'UNFORESEEN_CONDITIONS',  980000, 45, 'D. Nguyen',  '2023-08-15', '2023-08-01', 'APPROVED'),
+    (cp_main, 'CO-002', 'Additional ADA curb ramp scope added by City Council directive',  'SCOPE_CHANGE',           420000, 20, 'D. Nguyen',  '2023-11-10', '2023-10-25', 'APPROVED'),
+    (cp_main, 'CO-003', 'Asphalt price escalation — materials cost increase',              'UNFORESEEN_CONDITIONS',  150000, 0,  'D. Nguyen',  '2024-02-20', '2024-02-01', 'APPROVED'),
+    # City Hall — 2 approved, 1 pending
+    (cp_cityhall,'CO-001','Asbestos abatement discovered in mechanical room walls',        'UNFORESEEN_CONDITIONS',  875000, 60, 'R. Okonkwo', '2023-10-05', '2023-09-20', 'APPROVED'),
+    (cp_cityhall,'CO-002','Owner-requested addition of Council chamber AV system upgrade', 'OWNER_REQUEST',          340000, 15, 'R. Okonkwo', '2024-01-18', '2024-01-05', 'APPROVED'),
+    (cp_cityhall,'CO-003','Structural steel redesign required by updated seismic code',    'REGULATORY',             520000, 45, None,          None,         '2024-06-10', 'PENDING'),
+    # Bridge — 1 approved, 1 pending
+    (cp_bridge, 'CO-001', 'Deck delamination more extensive than initial survey indicated','UNFORESEEN_CONDITIONS',  480000, 30, 'D. Nguyen',  '2023-04-12', '2023-03-28', 'APPROVED'),
+    (cp_bridge, 'CO-002', 'Weather delays — extended winter closure added to schedule',    'WEATHER',                     0, 28, None,          None,         '2024-01-15', 'PENDING'),
+    # Fiber — 1 approved CO
+    (cp_fiber,  'CO-001', 'Additional conduit required — route change to avoid conflicts', 'UNFORESEEN_CONDITIONS',  215000, 10, 'K. Singh',   '2023-09-22', '2023-09-10', 'APPROVED'),
+    # Water main — 1 pending
+    (cp_water,  'CO-001', 'Design error — service line depth specifications corrected',    'DESIGN_ERROR',           185000, 14, None,          None,         '2024-07-01', 'PENDING'),
+    # Downtown Streetscape — 1 approved
+    (cp_street, 'CO-001', 'Owner requested additional bike corral installation at 3 nodes','OWNER_REQUEST',           95000, 7,  'D. Nguyen',  '2024-05-15', '2024-05-01', 'APPROVED'),
+]
+
+for r in change_orders:
+    (pid, conum, desc, reason, cost, sched, approved_by, approved_date, submitted, status) = r
+    run(conum, f'''INSERT INTO "{S}"."I_ChangeOrder"
+        ("change_order_id","project_id","co_number","description","reason",
+         "cost_impact","schedule_impact_days","approved_by","approved_date","submitted_date","status")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)''',
+        [id20(), pid, conum, desc, reason,
+         cost, sched, approved_by, approved_date, submitted, status])
+
+# ── I_ProjectFunding ──────────────────────────────────────────────────────────
+run("CREATE I_ProjectFunding", f'''
+CREATE COLUMN TABLE "{S}"."I_ProjectFunding" (
+  "funding_id"       VARCHAR(20)    PRIMARY KEY,
+  "project_id"       VARCHAR(20),
+  "source_type"      VARCHAR(30),
+  "source_name"      NVARCHAR(100),
+  "fund_id"          VARCHAR(20),
+  "grant_id"         VARCHAR(20),
+  "allocated_amount" DECIMAL(15,2),
+  "drawn_amount"     DECIMAL(15,2)
+)''')
+
+project_funding = [
+    # Main St
+    (cp_main, 'BOND',          'GO Bond Series 2022-A',             f_cap,  None,    6000000, 6800000),
+    (cp_main, 'GRANT',         'CDBG Infrastructure Award FY2023',  f_cap,  g_cdbg,  2500000, 2720000),
+    # City Hall
+    (cp_cityhall,'BOND',       'Revenue Bond Series 2023',          f_cap,  None,    9000000, 7350000),
+    (cp_cityhall,'GENERAL_FUND','General Fund Capital Allocation',  f_cap,  None,    3000000, 2450000),
+    # Riverview Park
+    (cp_river,'GRANT',         'HOME Investment Partnership Grant', f_cap,  g_home,  1500000, 1050000),
+    (cp_river,'GENERAL_FUND',  'Parks Capital Improvement Fund',    f_cap,  None,    1700000, 1050000),
+    # Wastewater
+    (cp_wwater,'BOND',         'Revenue Bond Series 2024 (WWTP)',   f_cap,  None,   10000000,  490000),
+    (cp_wwater,'GRANT',        'SLFRF Infrastructure Allocation',   f_cap,  g_slfrf, 8000000,  490000),
+    # Fiber
+    (cp_fiber,'GENERAL_FUND',  'IT Capital Fund',                   f_cap,  None,    2500000, 2250000),
+    (cp_fiber,'SPECIAL_ASSESSMENT','Technology Surcharge Revenue',  f_cap,  None,    2000000, 1800000),
+    # Bridge
+    (cp_bridge,'BOND',         'GO Bond Series 2022-B (Bridges)',   f_cap,  None,    5000000, 4000000),
+    (cp_bridge,'GENERAL_FUND', 'Bridge Maintenance Reserve',        f_cap,  None,    2000000, 1600000),
+    # Community Center (completed)
+    (cp_comm,'GENERAL_FUND',   'Facilities Capital Fund',           f_cap,  None,    2800000, 2750000),
+    # Trail
+    (cp_trail,'GRANT',         'HOME Green Infrastructure Grant',   f_cap,  g_home,   900000,  372000),
+    (cp_trail,'DEVELOPER_CONTRIBUTION','Creekside Development Agreement',f_cap,None,  600000,  248000),
+    # Water Main
+    (cp_water,'BOND',          'Utility Revenue Bond 2023',         f_cap,  None,    5500000, 2695000),
+    # Library
+    (cp_library,'BOND',        'Library GO Bond 2024',              f_cap,  None,   17000000,  210000),
+    (cp_library,'GRANT',       'CDBG Community Facilities Award',   f_cap,  g_cdbg,  3000000,  126000),
+    (cp_library,'DEVELOPER_CONTRIBUTION','Library Impact Fee Fund',  f_cap, None,    2000000,   84000),
+    # Streetscape
+    (cp_street,'GENERAL_FUND', 'Downtown Improvement Fund',         f_cap,  None,    2000000, 1400000),
+    (cp_street,'BOND',         'GO Bond Series 2023-C (Streets)',   f_cap,  None,    1800000, 1260000),
+    # Fire Station
+    (cp_fire,'BOND',           'GO Bond Series 2024 (Public Safety)',f_cap, None,    7000000,  798000),
+    (cp_fire,'GENERAL_FUND',   'Fire Capital Reserve Fund',         f_cap,  None,    2500000,  285000),
+]
+
+for r in project_funding:
+    (pid, stype, sname, fund_id, grant_id, alloc, drawn) = r
+    run(sname[:20], f'''INSERT INTO "{S}"."I_ProjectFunding"
+        ("funding_id","project_id","source_type","source_name",
+         "fund_id","grant_id","allocated_amount","drawn_amount")
+        VALUES(?,?,?,?,?,?,?,?)''',
+        [id20(), pid, stype, sname, fund_id, grant_id, alloc, drawn])
+
+# ── I_Milestone ───────────────────────────────────────────────────────────────
+run("CREATE I_Milestone", f'''
+CREATE COLUMN TABLE "{S}"."I_Milestone" (
+  "milestone_id"     VARCHAR(20)    PRIMARY KEY,
+  "project_id"       VARCHAR(20),
+  "milestone_name"   NVARCHAR(100),
+  "milestone_type"   VARCHAR(20),
+  "planned_date"     DATE,
+  "actual_date"      DATE,
+  "status"           VARCHAR(20),
+  "completion_pct"   INTEGER,
+  "responsible_party"NVARCHAR(60),
+  "notes"            NVARCHAR(200)
+)''')
+
+# (project_id, name, type, planned, actual, status, pct, responsible, notes)
+milestones = [
+    # Main St (RED — over budget)
+    (cp_main, '30% Design Complete',       'DESIGN',       '2023-03-31','2023-04-05','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_main, '90% Design & Bid Package',  'DESIGN',       '2023-05-31','2023-06-10','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_main, 'Construction NTP',          'CONSTRUCTION', '2023-07-01','2023-07-08','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_main, '50% Construction',          'CONSTRUCTION', '2023-12-01','2024-01-15','COMPLETED',  100,'D. Nguyen',  'Delayed by utility conflicts'),
+    (cp_main, 'Substantial Completion',    'INSPECTION',   '2024-09-30', None,       'AT_RISK',     65,'D. Nguyen',  'Budget overrun may force scope reduction'),
+    (cp_main, 'Final Acceptance',          'CLOSEOUT',     '2024-12-31', None,       'AT_RISK',      0,'D. Nguyen',  None),
+
+    # City Hall (YELLOW)
+    (cp_cityhall,'Schematic Design',       'DESIGN',       '2023-07-31','2023-08-05','COMPLETED',  100,'R. Okonkwo', None),
+    (cp_cityhall,'Design Development',     'DESIGN',       '2023-10-31','2023-11-12','COMPLETED',  100,'R. Okonkwo', 'Asbestos discovery caused 12-day delay'),
+    (cp_cityhall,'Permit Issuance',        'PERMITTING',   '2024-01-15','2024-02-10','COMPLETED',  100,'R. Okonkwo', None),
+    (cp_cityhall,'Construction 50%',       'CONSTRUCTION', '2024-08-31', None,       'IN_PROGRESS', 52,'R. Okonkwo', None),
+    (cp_cityhall,'Seismic Retrofit Complete','CONSTRUCTION','2025-01-31', None,       'AT_RISK',     10,'R. Okonkwo', 'Pending CO-003 seismic redesign approval'),
+    (cp_cityhall,'Substantial Completion', 'INSPECTION',   '2025-04-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+    (cp_cityhall,'Final Acceptance',       'CLOSEOUT',     '2025-06-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+
+    # Riverview Park (GREEN)
+    (cp_river, 'Design Complete',          'DESIGN',       '2023-11-30','2023-11-25','COMPLETED',  100,'L. Patel',   None),
+    (cp_river, 'Permit Approval',          'PERMITTING',   '2024-01-31','2024-02-08','COMPLETED',  100,'L. Patel',   None),
+    (cp_river, 'Grading & Site Prep',      'CONSTRUCTION', '2024-03-31','2024-04-05','COMPLETED',  100,'L. Patel',   None),
+    (cp_river, 'Athletic Fields Complete', 'CONSTRUCTION', '2024-07-31', None,       'IN_PROGRESS', 70,'L. Patel',   None),
+    (cp_river, 'Restrooms & Amenities',    'CONSTRUCTION', '2024-09-15', None,       'NOT_STARTED',  0,'L. Patel',   None),
+    (cp_river, 'Final Inspection',         'INSPECTION',   '2024-09-30', None,       'NOT_STARTED',  0,'L. Patel',   None),
+
+    # WWTP (GREEN — early stage)
+    (cp_wwater,'Preliminary Engineering',  'DESIGN',       '2024-06-30','2024-07-15','COMPLETED',  100,'M. Torres',  None),
+    (cp_wwater,'Environmental Review',     'PERMITTING',   '2024-12-31', None,       'IN_PROGRESS', 40,'M. Torres',  None),
+    (cp_wwater,'30% Design',               'DESIGN',       '2025-06-30', None,       'NOT_STARTED',  0,'M. Torres',  None),
+    (cp_wwater,'100% Design',              'DESIGN',       '2026-03-31', None,       'NOT_STARTED',  0,'M. Torres',  None),
+    (cp_wwater,'Construction NTP',         'CONSTRUCTION', '2026-07-01', None,       'NOT_STARTED',  0,'M. Torres',  None),
+
+    # Fiber (YELLOW — high committed)
+    (cp_fiber, 'Core Backbone Complete',   'CONSTRUCTION', '2023-10-31','2023-11-05','COMPLETED',  100,'K. Singh',   None),
+    (cp_fiber, 'City Hall & Police Online','CONSTRUCTION', '2024-01-31','2024-02-12','COMPLETED',  100,'K. Singh',   None),
+    (cp_fiber, 'Library Branches Online',  'CONSTRUCTION', '2024-06-30', None,       'IN_PROGRESS', 80,'K. Singh',   None),
+    (cp_fiber, 'Fire Stations Connected',  'CONSTRUCTION', '2024-09-30', None,       'AT_RISK',     25,'K. Singh',   'Supply chain delay on fiber optic cable'),
+    (cp_fiber, 'Network Acceptance Test',  'INSPECTION',   '2024-10-31', None,       'NOT_STARTED',  0,'K. Singh',   None),
+
+    # Bridge (RED — milestones at risk)
+    (cp_bridge,'Bridge Inspection Report', 'DESIGN',       '2022-12-31','2023-01-10','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_bridge,'Design & Bid Package',     'DESIGN',       '2023-03-31','2023-04-20','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_bridge,'Construction NTP',         'CONSTRUCTION', '2023-06-01','2023-06-01','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_bridge,'Deck Removal & Prep',      'CONSTRUCTION', '2023-10-31','2024-01-15','COMPLETED',  100,'D. Nguyen',  'Delayed — more delamination than expected'),
+    (cp_bridge,'Structural Repairs 50%',   'CONSTRUCTION', '2024-04-30', None,       'IN_PROGRESS', 60,'D. Nguyen',  None),
+    (cp_bridge,'Deck Pour & Resurfacing',  'CONSTRUCTION', '2024-06-30', None,       'AT_RISK',     10,'D. Nguyen',  'Weather delays — lost 28 schedule days'),
+    (cp_bridge,'Final Inspection',         'INSPECTION',   '2024-08-31', None,       'AT_RISK',      0,'D. Nguyen',  None),
+
+    # Community Center (COMPLETED)
+    (cp_comm, 'Design Complete',           'DESIGN',       '2022-09-30','2022-09-28','COMPLETED',  100,'L. Patel',   None),
+    (cp_comm, 'Permits Issued',            'PERMITTING',   '2022-11-30','2022-12-05','COMPLETED',  100,'L. Patel',   None),
+    (cp_comm, 'Substantial Completion',    'CONSTRUCTION', '2023-10-31','2023-10-20','COMPLETED',  100,'L. Patel',   'Finished 11 days ahead of schedule'),
+    (cp_comm, 'Final Acceptance',          'CLOSEOUT',     '2023-12-31','2023-11-15','COMPLETED',  100,'L. Patel',   'Project closed under budget'),
+
+    # Trail (GREEN)
+    (cp_trail,'Design & Permits',          'DESIGN',       '2024-05-31','2024-06-10','COMPLETED',  100,'L. Patel',   None),
+    (cp_trail,'Grading & Base Course',     'CONSTRUCTION', '2024-08-31', None,       'IN_PROGRESS', 55,'L. Patel',   None),
+    (cp_trail,'Paving & Amenities',        'CONSTRUCTION', '2024-11-15', None,       'NOT_STARTED',  0,'L. Patel',   None),
+    (cp_trail,'Final Inspection',          'INSPECTION',   '2024-12-15', None,       'NOT_STARTED',  0,'L. Patel',   None),
+
+    # Water Main (YELLOW)
+    (cp_water,'Design Package',            'DESIGN',       '2024-01-31','2024-02-05','COMPLETED',  100,'M. Torres',  None),
+    (cp_water,'Permit & Right-of-Way',     'PERMITTING',   '2024-03-31','2024-04-18','COMPLETED',  100,'M. Torres',  None),
+    (cp_water,'Main Replacement Phase 1',  'CONSTRUCTION', '2024-07-31', None,       'IN_PROGRESS', 70,'M. Torres',  None),
+    (cp_water,'Main Replacement Phase 2',  'CONSTRUCTION', '2024-10-31', None,       'AT_RISK',      5,'M. Torres',  'Design error CO pending — may affect scope'),
+    (cp_water,'Final Pressure Test',       'INSPECTION',   '2024-11-30', None,       'NOT_STARTED',  0,'M. Torres',  None),
+
+    # Library (GREEN — early)
+    (cp_library,'Site Selection Final',    'PLANNING',     '2024-09-30','2024-10-01','COMPLETED',  100,'R. Okonkwo', None),
+    (cp_library,'Architect Selection',     'DESIGN',       '2024-12-31', None,       'IN_PROGRESS', 60,'R. Okonkwo', None),
+    (cp_library,'Schematic Design',        'DESIGN',       '2025-06-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+    (cp_library,'Design Development',      'DESIGN',       '2025-12-31', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+    (cp_library,'Permit Submission',       'PERMITTING',   '2026-06-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+
+    # Streetscape (YELLOW)
+    (cp_street,'Design Complete',          'DESIGN',       '2024-03-31','2024-04-02','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_street,'Permits',                  'PERMITTING',   '2024-04-30','2024-05-10','COMPLETED',  100,'D. Nguyen',  None),
+    (cp_street,'50% Construction',         'CONSTRUCTION', '2024-08-31', None,       'IN_PROGRESS', 68,'D. Nguyen',  None),
+    (cp_street,'Substantial Completion',   'CONSTRUCTION', '2024-11-30', None,       'NOT_STARTED',  0,'D. Nguyen',  None),
+    (cp_street,'Final Acceptance',         'CLOSEOUT',     '2024-12-31', None,       'NOT_STARTED',  0,'D. Nguyen',  None),
+
+    # Fire Station (GREEN — early)
+    (cp_fire, 'Needs Assessment',          'PLANNING',     '2024-05-31','2024-05-28','COMPLETED',  100,'R. Okonkwo', None),
+    (cp_fire, 'Architect RFP & Selection', 'DESIGN',       '2024-08-31','2024-09-10','COMPLETED',  100,'R. Okonkwo', None),
+    (cp_fire, 'Schematic Design',          'DESIGN',       '2024-12-31', None,       'IN_PROGRESS', 45,'R. Okonkwo', None),
+    (cp_fire, 'Design Development & CDs',  'DESIGN',       '2025-06-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+    (cp_fire, 'Building Permit',           'PERMITTING',   '2025-09-30', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+    (cp_fire, 'Construction NTP',          'CONSTRUCTION', '2025-12-01', None,       'NOT_STARTED',  0,'R. Okonkwo', None),
+]
+
+for r in milestones:
+    (pid, mname, mtype, planned, actual, status, pct, resp, notes) = r
+    run(mname[:20], f'''INSERT INTO "{S}"."I_Milestone"
+        ("milestone_id","project_id","milestone_name","milestone_type",
+         "planned_date","actual_date","status","completion_pct","responsible_party","notes")
+        VALUES(?,?,?,?,?,?,?,?,?,?)''',
+        [id20(), pid, mname, mtype, planned, actual, status, pct, resp, notes])
+
+# ── Capital Project Views ──────────────────────────────────────────────────────
+run("V_ProjectHealth", f'''
+CREATE OR REPLACE VIEW "{S}"."V_ProjectHealth" AS
+SELECT
+  cp."project_id", cp."project_number", cp."project_name", cp."project_type",
+  cp."department", cp."description", cp."total_budget", cp."spent_to_date",
+  cp."encumbrances", cp."project_status", cp."phase", cp."start_date",
+  cp."expected_completion", cp."actual_completion", cp."fund_id", cp."grant_id",
+  cp."priority", cp."project_manager",
+  COUNT(DISTINCT co."change_order_id")                                               AS CHANGE_ORDER_COUNT,
+  SUM(CASE WHEN co."status" = 'APPROVED' THEN co."cost_impact"         ELSE 0 END) AS APPROVED_CO_IMPACT,
+  SUM(CASE WHEN co."status" = 'APPROVED' THEN co."schedule_impact_days" ELSE 0 END) AS SCHEDULE_DAYS_ADDED,
+  COUNT(DISTINCT m."milestone_id")                                                   AS TOTAL_MILESTONES,
+  SUM(CASE WHEN m."status" = 'COMPLETED'   THEN 1 ELSE 0 END)                       AS MILESTONES_COMPLETE,
+  SUM(CASE WHEN m."status" = 'AT_RISK'     THEN 1 ELSE 0 END)                       AS MILESTONES_AT_RISK,
+  SUM(CASE WHEN m."status" = 'IN_PROGRESS' THEN 1 ELSE 0 END)                       AS MILESTONES_IN_PROGRESS,
+  ROUND(cp."spent_to_date" / NULLIF(cp."total_budget", 0) * 100, 1)                 AS SPEND_PCT,
+  ROUND((cp."spent_to_date" + cp."encumbrances") / NULLIF(cp."total_budget", 0) * 100, 1) AS COMMITTED_PCT,
+  cp."total_budget" - cp."spent_to_date" - cp."encumbrances"                         AS BUDGET_REMAINING,
+  CASE
+    WHEN cp."project_status" = 'CANCELLED'  THEN 'GREY'
+    WHEN cp."project_status" = 'COMPLETED'  THEN 'GREEN'
+    WHEN cp."spent_to_date" > cp."total_budget" THEN 'RED'
+    WHEN SUM(CASE WHEN m."status" = 'AT_RISK' THEN 1 ELSE 0 END) > 1 THEN 'RED'
+    WHEN (cp."spent_to_date" + cp."encumbrances") / NULLIF(cp."total_budget", 0) > 0.95 THEN 'YELLOW'
+    WHEN SUM(CASE WHEN m."status" = 'AT_RISK' THEN 1 ELSE 0 END) > 0 THEN 'YELLOW'
+    ELSE 'GREEN'
+  END AS HEALTH_STATUS
+FROM "{S}"."I_CapitalProject" cp
+LEFT JOIN "{S}"."I_ChangeOrder" co ON co."project_id" = cp."project_id"
+LEFT JOIN "{S}"."I_Milestone"   m  ON m."project_id"  = cp."project_id"
+GROUP BY
+  cp."project_id", cp."project_number", cp."project_name", cp."project_type",
+  cp."department", cp."description", cp."total_budget", cp."spent_to_date",
+  cp."encumbrances", cp."project_status", cp."phase", cp."start_date",
+  cp."expected_completion", cp."actual_completion", cp."fund_id", cp."grant_id",
+  cp."priority", cp."project_manager"''')
+
+run("V_CIPSummary", f'''
+CREATE OR REPLACE VIEW "{S}"."V_CIPSummary" AS
+SELECT
+  "project_type"                                                               AS "project_type",
+  COUNT(*)                                                                     AS "PROJECT_COUNT",
+  SUM("total_budget")                                                          AS "TOTAL_BUDGET",
+  SUM("spent_to_date")                                                         AS "TOTAL_SPENT",
+  SUM("encumbrances")                                                          AS "TOTAL_ENCUMBRANCES",
+  ROUND(SUM("spent_to_date") / NULLIF(SUM("total_budget"), 0) * 100, 1)       AS "SPEND_PCT",
+  SUM(CASE WHEN "project_status" = 'ACTIVE'    THEN 1 ELSE 0 END)             AS "ACTIVE_COUNT",
+  SUM(CASE WHEN "project_status" = 'ON_HOLD'   THEN 1 ELSE 0 END)             AS "ON_HOLD_COUNT",
+  SUM(CASE WHEN "project_status" = 'COMPLETED' THEN 1 ELSE 0 END)             AS "COMPLETED_COUNT"
+FROM "{S}"."I_CapitalProject"
+GROUP BY "project_type"''')
+
 # ── Final row counts ──────────────────────────────────────────────────────────
 print(f"\n{'='*65}")
 print(f"  DONE  ✓ {ok}  ✗ {err}  Total: {ok+err}")
@@ -962,6 +1325,7 @@ for t in [
     'I_ScenarioVersion','I_ForecastEntry','I_AuditLog',
     'I_Vendor','I_Contract','I_PurchaseOrder','I_Invoice',
     'I_BudgetLine','I_JournalEntry','I_CloseTask','I_InterfundTransfer',
+    'I_CapitalProject','I_ChangeOrder','I_ProjectFunding','I_Milestone',
 ]:
     cur.execute(f'SELECT COUNT(*) FROM "{S}"."{t}"')
     cnt = cur.fetchone()[0]
