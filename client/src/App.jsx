@@ -10,6 +10,7 @@ import Outcomes  from './pages/Outcomes';
 import Audit     from './pages/Audit';
 import Forecast  from './pages/Forecast';
 import SACGuide  from './pages/SACGuide';
+import AIChat    from './pages/AIChat';
 
 const PAGE_TITLES = {
   '/':          'Platform Overview',
@@ -20,6 +21,7 @@ const PAGE_TITLES = {
   '/audit':     'Audit Readiness',
   '/forecast':  'Financial Forecast',
   '/guide':     'SAC Development Guide',
+  '/ai':        'Sierra Intelligence · AI Analyst',
 };
 
 function RequireAuth() {
@@ -43,6 +45,7 @@ export default function App() {
           <Route path="/audit"     element={<Audit />} />
           <Route path="/forecast"  element={<Forecast />} />
           <Route path="/guide"     element={<SACGuide />} />
+          <Route path="/ai"        element={<AIChat />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

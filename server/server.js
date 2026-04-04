@@ -9,6 +9,7 @@ import subawardsRoutes from './modules/subawards/subawards.routes.js';
 import outcomesRoutes  from './modules/outcomes/outcomes.routes.js';
 import auditRoutes     from './modules/audit/audit.routes.js';
 import forecastRoutes  from './modules/forecast/forecast.routes.js';
+import aiRoutes        from './modules/ai/ai.routes.js';
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -25,5 +26,6 @@ app.use('/api/subawards',  subawardsRoutes);
 app.use('/api/outcomes',   outcomesRoutes);
 app.use('/api/audit',      auditRoutes);
 app.use('/api/forecast',   forecastRoutes);
+app.use('/api/ai',         aiRoutes);
 
 app.listen(PORT, () => console.log(`\n  Sierra API → http://localhost:${PORT}\n`));

@@ -11,6 +11,8 @@ const NAV = [
   { to: '/outcomes',   label: 'Outcome Metrics',      icon: '📈' },
   { to: '/audit',      label: 'Audit Readiness',      icon: '🔍' },
   { to: '/forecast',   label: 'Financial Forecast',   icon: '📊' },
+  { section: 'AI' },
+  { to: '/ai',         label: 'Sierra Intelligence',  icon: '✦'  },
   { section: 'Resources' },
   { to: '/guide',      label: 'SAC Dev Guide',        icon: '📖' },
 ];
