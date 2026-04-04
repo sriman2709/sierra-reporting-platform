@@ -89,21 +89,26 @@ export default function Assets() {
   const { data: failures,  loading: fL } = useData('/assets/failures');
   const { data: costByType,loading: cL } = useData('/assets/cost-by-type');
 
-  const k = kpis || {};
+  const k = (kpis && typeof kpis === 'object' && !Array.isArray(kpis)) ? kpis : {};
+  const safeAssets     = Array.isArray(assets)     ? assets     : [];
+  const safeWOs        = Array.isArray(workOrders) ? workOrders : [];
+  const safePMs        = Array.isArray(pmPlans)    ? pmPlans    : [];
+  const safeFailures   = Array.isArray(failures)   ? failures   : [];
+  const safeCostByType = Array.isArray(costByType) ? costByType : [];
 
   // Condition distribution for pie chart
   const conditionDist = [1,2,3,4,5].map(r => ({
     name: CONDITION_LABEL[r],
-    value: (assets || []).filter(a => Number(a.condition_rating) === r).length,
+    value: safeAssets.filter(a => Number(a.condition_rating) === r).length,
   })).filter(d => d.value > 0);
 
   // PM compliance rate
-  const totalPMs = (pmPlans || []).length;
-  const overduePMs = (pmPlans || []).filter(p => p.PM_STATUS === 'OVERDUE').length;
+  const totalPMs = safePMs.length;
+  const overduePMs = safePMs.filter(p => p.PM_STATUS === 'OVERDUE').length;
   const compliancePct = totalPMs > 0 ? Math.round(((totalPMs - overduePMs) / totalPMs) * 100) : 0;
 
   // Cost by type chart
-  const costChart = (costByType || []).map(r => ({
+  const costChart = safeCostByType.map(r => ({
     name: r.asset_type,
     'Maint. Cost': Number(r.total_maint_cost || 0),
     'Emergency Cost': Number(r.emergency_cost || 0),
@@ -164,7 +169,7 @@ export default function Assets() {
                   </ResponsiveContainer>
                   <div style={{ flex: 1 }}>
                     {[1,2,3,4,5].map(r => {
-                      const count = (assets || []).filter(a => Number(a.condition_rating) === r).length;
+                      const count = safeAssets.filter(a => Number(a.condition_rating) === r).length;
                       if (!count) return null;
                       const color = CONDITION_COLOR[r];
                       return (
@@ -206,7 +211,7 @@ export default function Assets() {
                   <th>Total Maint. Cost</th><th>Emergency Cost</th><th>Avg WO Cost</th>
                 </tr></thead>
                 <tbody>
-                  {(costByType || []).map(r => (
+                  {safeCostByType.map(r => (
                     <tr key={r.asset_type}>
                       <td><Badge value={r.asset_type} colorMap={TYPE_COLOR} /></td>
                       <td style={{ textAlign: 'center' }}>{r.asset_count}</td>
@@ -227,7 +232,7 @@ export default function Assets() {
 
       {/* ── Asset Registry ── */}
       {tab === 'Asset Registry' && (
-        <SectionCard title={`Asset Registry — Health Dashboard (${assets?.length ?? '…'} assets)`}>
+        <SectionCard title={`Asset Registry — Health Dashboard (${safeAssets.length || '…'} assets)`}>
           {aL ? <div className="loading">Loading…</div> : (
             <table className="data-table">
               <thead><tr>
@@ -236,7 +241,7 @@ export default function Assets() {
                 <th>Failures</th><th>Maint. Cost YTD</th><th>Health</th>
               </tr></thead>
               <tbody>
-                {(assets || []).map(a => {
+                {safeAssets.map(a => {
                   const health = a.HEALTH_STATUS || 'GOOD';
                   const hColor = HEALTH_COLOR[health] || '#718096';
                   return (
@@ -267,7 +272,7 @@ export default function Assets() {
                     </tr>
                   );
                 })}
-                {!(assets || []).length && (
+                {!safeAssets.length && (
                   <tr><td colSpan={10} style={{ textAlign: 'center', color: '#718096', padding: 24 }}>No asset data found</td></tr>
                 )}
               </tbody>
@@ -280,16 +285,16 @@ export default function Assets() {
       {tab === 'Work Orders' && (
         <div>
           {/* Emergency banner */}
-          {(workOrders || []).some(wo => wo.wo_type === 'EMERGENCY' && wo.wo_status !== 'COMPLETED') && (
+          {safeWOs.some(wo => wo.wo_type === 'EMERGENCY' && wo.wo_status !== 'COMPLETED') && (
             <div style={{ background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{ fontSize: 18 }}>🚨</span>
               <span style={{ color: '#c53030', fontWeight: 600 }}>
-                {(workOrders || []).filter(wo => wo.wo_type === 'EMERGENCY' && wo.wo_status !== 'COMPLETED').length} emergency work order(s) open — total open value: {fmt$((workOrders || []).filter(wo => wo.wo_status !== 'COMPLETED').reduce((s, wo) => s + Number(wo.total_cost || 0), 0))}
+                {safeWOs.filter(wo => wo.wo_type === 'EMERGENCY' && wo.wo_status !== 'COMPLETED').length} emergency work order(s) open — total open value: {fmt$(safeWOs.filter(wo => wo.wo_status !== 'COMPLETED').reduce((s, wo) => s + Number(wo.total_cost || 0), 0))}
               </span>
             </div>
           )}
 
-          <SectionCard title={`Work Orders (${workOrders?.length ?? '…'})`}>
+          <SectionCard title={`Work Orders (${safeWOs.length || '…'})`}>
             {wL ? <div className="loading">Loading…</div> : (
               <table className="data-table">
                 <thead><tr>
@@ -298,7 +303,7 @@ export default function Assets() {
                   <th>Age</th><th>Labor</th><th>Parts</th><th>Total</th><th>Status</th>
                 </tr></thead>
                 <tbody>
-                  {(workOrders || []).map(wo => {
+                  {safeWOs.map(wo => {
                     const priColor = PRIORITY_COLOR[wo.priority] || '#718096';
                     return (
                       <tr key={wo.work_order_id} style={{
@@ -327,7 +332,7 @@ export default function Assets() {
                       </tr>
                     );
                   })}
-                  {!(workOrders || []).length && (
+                  {!safeWOs.length && (
                     <tr><td colSpan={11} style={{ textAlign: 'center', color: '#718096', padding: 24 }}>No work orders found</td></tr>
                   )}
                 </tbody>
@@ -343,9 +348,9 @@ export default function Assets() {
           {/* Compliance summary cards */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
             {[
-              { label: 'OVERDUE',     color: '#e53e3e', count: (pmPlans||[]).filter(p => p.PM_STATUS==='OVERDUE').length },
-              { label: 'DUE SOON',    color: '#d69e2e', count: (pmPlans||[]).filter(p => p.PM_STATUS==='DUE_SOON').length },
-              { label: 'ON SCHEDULE', color: '#38a169', count: (pmPlans||[]).filter(p => p.PM_STATUS==='ON_SCHEDULE').length },
+              { label: 'OVERDUE',     color: '#e53e3e', count: safePMs.filter(p => p.PM_STATUS==='OVERDUE').length },
+              { label: 'DUE SOON',    color: '#d69e2e', count: safePMs.filter(p => p.PM_STATUS==='DUE_SOON').length },
+              { label: 'ON SCHEDULE', color: '#38a169', count: safePMs.filter(p => p.PM_STATUS==='ON_SCHEDULE').length },
             ].map(s => (
               <div key={s.label} style={{ background: s.color + '15', border: `2px solid ${s.color}33`, borderRadius: 10, padding: '14px 28px', textAlign: 'center', minWidth: 130 }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.count}</div>
@@ -358,7 +363,7 @@ export default function Assets() {
             </div>
           </div>
 
-          <SectionCard title={`Preventive Maintenance Plans (${pmPlans?.length ?? '…'} active)`}>
+          <SectionCard title={`Preventive Maintenance Plans (${safePMs.length || '…'} active)`}>
             {pL ? <div className="loading">Loading…</div> : (
               <table className="data-table">
                 <thead><tr>
@@ -367,7 +372,7 @@ export default function Assets() {
                   <th>Est. Cost</th><th>Assigned To</th><th>Status</th>
                 </tr></thead>
                 <tbody>
-                  {(pmPlans || []).map(pm => {
+                  {safePMs.map(pm => {
                     const color = PM_STATUS_COLOR[pm.PM_STATUS] || '#718096';
                     const overdue = Number(pm.DAYS_OVERDUE || 0);
                     return (
@@ -396,7 +401,7 @@ export default function Assets() {
                       </tr>
                     );
                   })}
-                  {!(pmPlans || []).length && (
+                  {!safePMs.length && (
                     <tr><td colSpan={9} style={{ textAlign: 'center', color: '#718096', padding: 24 }}>No PM plans found</td></tr>
                   )}
                 </tbody>
@@ -405,8 +410,8 @@ export default function Assets() {
           </SectionCard>
 
           {/* Failure analysis */}
-          {(failures || []).length > 0 && (
-            <SectionCard title={`Failure Event Log (${failures?.length ?? '…'})`} style={{ marginTop: 20 }}>
+          {safeFailures.length > 0 && (
+            <SectionCard title={`Failure Event Log (${safeFailures.length || '…'})`} style={{ marginTop: 20 }}>
               {fL ? <div className="loading">Loading…</div> : (
                 <table className="data-table">
                   <thead><tr>
@@ -414,7 +419,7 @@ export default function Assets() {
                     <th>Downtime</th><th>Repair Cost</th><th>Recurring</th><th>PM Preventable</th>
                   </tr></thead>
                   <tbody>
-                    {(failures || []).map(f => (
+                    {safeFailures.map(f => (
                       <tr key={f.failure_id} style={{ background: f.is_recurring === 'Y' ? '#fff5f5' : undefined }}>
                         <td>{fmtDate(f.failure_date)}</td>
                         <td style={{ fontSize: 12 }}>
