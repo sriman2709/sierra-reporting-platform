@@ -14,14 +14,14 @@ export const Q = {
   whatIfBase: `
     SELECT
       f."fund_id", f."fund_code", f."fund_name", f."fund_type", f."fiscal_year",
-      f."appropriation_amount"  AS "budget",
+      f."beginning_balance"     AS "budget",
       f."expenditures_ytd"      AS "expenditures",
-      f."encumbrance_amount"    AS "encumbrances",
-      (f."appropriation_amount" - f."expenditures_ytd" - f."encumbrance_amount") AS "available",
+      f."committed_amount"      AS "encumbrances",
+      (f."beginning_balance" - f."expenditures_ytd" - f."committed_amount") AS "available",
       f."ending_balance",
       f."is_grant_fund",
       f."gasb54_class",
-      ROUND(f."expenditures_ytd" / NULLIF(f."appropriation_amount",0) * 100, 1) AS "spend_pct"
+      ROUND(f."expenditures_ytd" / NULLIF(f."beginning_balance",0) * 100, 1) AS "spend_pct"
     FROM ${S}."I_Fund" f
     ORDER BY f."fund_name"`,
 
@@ -29,20 +29,20 @@ export const Q = {
   sensitivity: `
     SELECT
       f."fund_id", f."fund_name", f."fund_type",
-      f."appropriation_amount"  AS "budget",
+      f."beginning_balance"     AS "budget",
       f."expenditures_ytd"      AS "expenditures",
-      f."encumbrance_amount"    AS "encumbrances",
-      (f."appropriation_amount" - f."expenditures_ytd" - f."encumbrance_amount") AS "current_available",
-      ROUND(f."appropriation_amount" * 0.10, 0)  AS "impact_10pct_budget_cut",
-      ROUND(f."expenditures_ytd"     * 0.10, 0)  AS "impact_10pct_cost_increase",
-      ROUND(f."appropriation_amount" * 0.05, 0)  AS "impact_5pct_budget_cut",
-      ROUND(f."expenditures_ytd"     * 0.05, 0)  AS "impact_5pct_cost_increase",
-      ROUND(f."expenditures_ytd" / NULLIF(f."appropriation_amount",0) * 100, 1) AS "spend_pct",
+      f."committed_amount"      AS "encumbrances",
+      (f."beginning_balance" - f."expenditures_ytd" - f."committed_amount") AS "current_available",
+      ROUND(f."beginning_balance" * 0.10, 0)  AS "impact_10pct_budget_cut",
+      ROUND(f."expenditures_ytd"  * 0.10, 0)  AS "impact_10pct_cost_increase",
+      ROUND(f."beginning_balance" * 0.05, 0)  AS "impact_5pct_budget_cut",
+      ROUND(f."expenditures_ytd"  * 0.05, 0)  AS "impact_5pct_cost_increase",
+      ROUND(f."expenditures_ytd" / NULLIF(f."beginning_balance",0) * 100, 1) AS "spend_pct",
       CASE
-        WHEN (f."appropriation_amount" - f."expenditures_ytd" - f."encumbrance_amount")
-             < f."appropriation_amount" * 0.10 THEN 'HIGH'
-        WHEN (f."appropriation_amount" - f."expenditures_ytd" - f."encumbrance_amount")
-             < f."appropriation_amount" * 0.25 THEN 'MEDIUM'
+        WHEN (f."beginning_balance" - f."expenditures_ytd" - f."committed_amount")
+             < f."beginning_balance" * 0.10 THEN 'HIGH'
+        WHEN (f."beginning_balance" - f."expenditures_ytd" - f."committed_amount")
+             < f."beginning_balance" * 0.25 THEN 'MEDIUM'
         ELSE 'LOW'
       END AS "sensitivity_rating"
     FROM ${S}."I_Fund" f

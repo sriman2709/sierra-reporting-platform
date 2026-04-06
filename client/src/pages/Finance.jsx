@@ -143,7 +143,7 @@ export default function Finance() {
         <KpiCard label="Available Balance"  value={fmt$(k.total_available)} color={Number(k.total_available) < 0 ? 'red' : ''} />
         <KpiCard label="Budget Overruns"    value={k.overrun_lines ?? '…'} color={Number(k.overrun_lines) > 0 ? 'red' : ''} />
         <KpiCard label="Journal Exceptions" value={k.journal_exceptions ?? '…'} color={Number(k.journal_exceptions) > 0 ? 'red' : ''} />
-        <KpiCard label="Close Completion"   value={k.close_pct != null ? `${k.close_pct}%` : '…'} color={Number(k.close_pct) >= 80 ? 'green' : Number(k.close_pct) >= 50 ? 'yellow' : 'red'} />
+        <KpiCard label="Close Completion"   value={k.close_pct != null ? `${Number(k.close_pct).toFixed(1)}%` : '…'} color={Number(k.close_pct) >= 80 ? 'green' : Number(k.close_pct) >= 50 ? 'yellow' : 'red'} />
       </div>
 
       {/* Tabs */}

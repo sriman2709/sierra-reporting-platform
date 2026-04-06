@@ -4,7 +4,14 @@ export const Q = {
   byGrant: (id) => `SELECT * FROM ${S}."V_SubawardTransparency" WHERE PRIME_GRANT_ID = '${id}'`,
   subrecipients: `SELECT * FROM ${S}."I_Subrecipient" ORDER BY CAST("risk_score" AS INTEGER) DESC`,
   monitoring: `
-    SELECT m.*, sr."subrecipient_name"
+    SELECT
+      m."monitoring_id", m."subrecipient_id", m."subaward_id",
+      m."monitoring_type", m."monitoring_date", m."findings_count",
+      m."findings_summary", m."risk_rating", m."follow_up_required",
+      m."report_status", m."report_due_date", m."conducted_by",
+      m."report_status"        AS "monitoring_result",
+      COALESCE(m."questioned_costs", 0)  AS "questioned_costs",
+      sr."subrecipient_name"
     FROM ${S}."I_SubrecipientMonitoring" m
     JOIN ${S}."I_Subrecipient" sr ON sr."subrecipient_id" = m."subrecipient_id"`,
   corrective: `

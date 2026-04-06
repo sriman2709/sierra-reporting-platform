@@ -28,10 +28,10 @@ export const Q = {
       g."award_status",
       p."program_name",
       f."fund_name",
-      f."expenditures_ytd"     AS "fund_expenditures",
-      f."appropriation_amount" AS "fund_budget",
-      f."encumbrance_amount"   AS "fund_encumbrances",
-      ROUND((f."expenditures_ytd" / NULLIF(f."appropriation_amount",0)) * 100, 1) AS "spend_pct",
+      f."expenditures_ytd"    AS "fund_expenditures",
+      f."beginning_balance"   AS "fund_budget",
+      f."committed_amount"    AS "fund_encumbrances",
+      ROUND((f."expenditures_ytd" / NULLIF(f."beginning_balance",0)) * 100, 1) AS "spend_pct",
       ROUND(
         DAYS_BETWEEN(g."award_start_date", CURRENT_DATE) * 100.0 /
         NULLIF(DAYS_BETWEEN(g."award_start_date", g."award_end_date"),0),
@@ -39,11 +39,11 @@ export const Q = {
       ) AS "time_elapsed_pct",
       CASE
         WHEN g."award_status" = 'CLOSED' THEN 'CLOSED'
-        WHEN ROUND((f."expenditures_ytd" / NULLIF(f."appropriation_amount",0)) * 100, 1) >
+        WHEN ROUND((f."expenditures_ytd" / NULLIF(f."beginning_balance",0)) * 100, 1) >
              ROUND(DAYS_BETWEEN(g."award_start_date", CURRENT_DATE) * 100.0 /
              NULLIF(DAYS_BETWEEN(g."award_start_date", g."award_end_date"),0), 1) + 15
              THEN 'OVER_BURNING'
-        WHEN ROUND((f."expenditures_ytd" / NULLIF(f."appropriation_amount",0)) * 100, 1) <
+        WHEN ROUND((f."expenditures_ytd" / NULLIF(f."beginning_balance",0)) * 100, 1) <
              ROUND(DAYS_BETWEEN(g."award_start_date", CURRENT_DATE) * 100.0 /
              NULLIF(DAYS_BETWEEN(g."award_start_date", g."award_end_date"),0), 1) - 20
              THEN 'UNDER_BURNING'

@@ -207,25 +207,32 @@ for r in [
          "place_of_performance_city","place_of_performance_state","reporting_required","created_by")
         VALUES(?,?,?,?,?,?,?,?,?,?,?,'Austin','TX','Y','seed')''', list(r))
 
+# ── Add questioned_costs column to monitoring table (idempotent) ─────────────
+run("ALT monitoring questioned_costs", f'''
+    ALTER TABLE "{S}"."I_SubrecipientMonitoring"
+    ADD ("questioned_costs" DECIMAL(15,2) DEFAULT 0)''')
+
 # ── Subrecipient Monitoring ──────────────────────────────────────────────────
 print("── Subrecipient Monitoring ──")
 for r in [
-    (sr_hope,   id28(),None,  'DESK_REVIEW','2024-01-15',0,'COMPLETE','No findings — all documentation in order',                         'LOW',  yn(0),'2024-03-31'),
-    (sr_nextgen,id28(),id28(),'SITE_VISIT', '2024-02-20',2,'COMPLETE','Procurement documentation missing for 3 vendor contracts',         'MEDIUM',yn(1),'2024-04-30'),
-    (sr_unity,  id28(),id28(),'SITE_VISIT', '2024-03-10',3,'COMPLETE','Timekeeping procedures inadequate; effort reporting non-compliant','HIGH',  yn(1),'2024-05-15'),
-    (sr_valley, id28(),id28(),'SITE_VISIT', '2024-01-08',5,'COMPLETE','Unallowable payments $4,200; weak internal controls; late reports','HIGH',  yn(1),'2024-03-15'),
-    (sr_green,  id28(),None,  'DESK_REVIEW','2024-04-01',0,'COMPLETE','Clean — all quarterly reports received on time',                   'LOW',  yn(0),'2024-06-30'),
-    (sr_bright, id28(),None,  'DESK_REVIEW','2024-03-25',1,'COMPLETE','One late progress report; no financial issues',                    'LOW',  yn(0),'2024-05-31'),
-    (sr_metro,  id28(),None,  'DESK_REVIEW','2024-02-10',0,'COMPLETE','Government entity — standard monitoring; clean',                   'LOW',  yn(0),'2024-04-30'),
-    (sr_summit, id28(),id28(),'SITE_VISIT', '2024-04-15',1,'COMPLETE','Eligibility documentation gaps for 8 participants',                'MEDIUM',yn(1),'2024-06-15'),
+    # (subrecipient_id, monitoring_id, subaward_id, type, date,
+    #  findings_count, report_status, summary, risk_rating, follow_up, due_date, questioned_costs)
+    (sr_hope,   id28(),None,  'DESK_REVIEW','2024-01-15',0,'COMPLETE','No findings — all documentation in order',                         'LOW',  yn(0),'2024-03-31',    0.00),
+    (sr_nextgen,id28(),id28(),'SITE_VISIT', '2024-02-20',2,'COMPLETE','Procurement documentation missing for 3 vendor contracts',         'MEDIUM',yn(1),'2024-04-30',    0.00),
+    (sr_unity,  id28(),id28(),'SITE_VISIT', '2024-03-10',3,'COMPLETE','Timekeeping procedures inadequate; effort reporting non-compliant','HIGH',  yn(1),'2024-05-15',    0.00),
+    (sr_valley, id28(),id28(),'SITE_VISIT', '2024-01-08',5,'COMPLETE','Unallowable payments $4,200; weak internal controls; late reports','HIGH',  yn(1),'2024-03-15', 4200.00),
+    (sr_green,  id28(),None,  'DESK_REVIEW','2024-04-01',0,'COMPLETE','Clean — all quarterly reports received on time',                   'LOW',  yn(0),'2024-06-30',    0.00),
+    (sr_bright, id28(),None,  'DESK_REVIEW','2024-03-25',1,'COMPLETE','One late progress report; no financial issues',                    'LOW',  yn(0),'2024-05-31',    0.00),
+    (sr_metro,  id28(),None,  'DESK_REVIEW','2024-02-10',0,'COMPLETE','Government entity — standard monitoring; clean',                   'LOW',  yn(0),'2024-04-30',    0.00),
+    (sr_summit, id28(),id28(),'SITE_VISIT', '2024-04-15',1,'COMPLETE','Eligibility documentation gaps for 8 participants',                'MEDIUM',yn(1),'2024-06-15',    0.00),
 ]:
     sa = r[1]; subaward_id = r[2]
     run(r[0][:8], f'''INSERT INTO "{S}"."I_SubrecipientMonitoring"
         ("monitoring_id","subrecipient_id","subaward_id","monitoring_type","monitoring_date",
          "findings_count","report_status","findings_summary","risk_rating","follow_up_required",
-         "report_due_date","conducted_by","created_by")
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,'Sierra Grants Team','seed')''',
-        [sa, r[0], subaward_id, r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
+         "report_due_date","conducted_by","questioned_costs","created_by")
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,'seed')''',
+        [sa, r[0], subaward_id, r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], 'Sierra Grants Team', r[11]])
 
 # ── Corrective Actions ────────────────────────────────────────────────────────
 print("── Corrective Actions ──")
@@ -422,11 +429,19 @@ actuals = [
     (m_at, p_education,'2024','Q1','2024-03-31', 91.2,'ON_TRACK'),
     (m_at, p_education,'2024','Q2','2024-06-30', 89.8,'ON_TRACK'),
 ]
+def dq_flag(status):
+    return 'VERIFIED' if status == 'ON_TRACK' else ('COMPLETE' if status == 'AT_RISK' else 'PRELIMINARY')
+
+def var_from_target(status):
+    return 5.0 if status == 'ON_TRACK' else (-8.5 if status == 'AT_RISK' else -18.2)
+
 for r in actuals:
+    status = r[6]
     run(f"{r[0][:6]} {r[3]}", f'''INSERT INTO "{S}"."I_OutcomeActual"
         ("actual_id","metric_id","program_id","fiscal_year","period","measurement_date",
-         "actual_value","performance_status","created_by")
-        VALUES(?,?,?,?,?,?,?,?,'seed')''', [id28()] + list(r))
+         "actual_value","data_quality_flag","variance_from_target","performance_status","created_by")
+        VALUES(?,?,?,?,?,?,?,?,?,?,'seed')''',
+        [id28(), r[0], r[1], r[2], r[3], r[4], r[5], dq_flag(status), var_from_target(status), status])
 
 # ── Cost to Serve — 6 quarters for cost-effectiveness charts ─────────────────
 print("── Cost to Serve (6 quarters) ──")
