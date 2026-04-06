@@ -1678,6 +1678,179 @@ GROUP BY
   a."last_inspection_date", a."next_inspection_date",
   a."serial_number", a."manufacturer", a."model"''')
 
+# ════════════════════════════════════════════════════════════════════════════
+#  Sprint 13: Inventory & Warehouse
+# ════════════════════════════════════════════════════════════════════════════
+print("\n  Sprint 13: Inventory & Warehouse…")
+
+# Clear (ignore missing table errors on first run)
+for t in ['I_StockTransaction','I_InventoryItem','I_Warehouse']:
+    run(f'CLR {t}', f'DELETE FROM "{S}"."{t}"')
+
+# I_Warehouse
+create_table('CRT I_Warehouse', f'''CREATE COLUMN TABLE "{S}"."I_Warehouse" (
+  "warehouse_id"     NVARCHAR(50)   NOT NULL PRIMARY KEY,
+  "warehouse_code"   NVARCHAR(20)   NOT NULL,
+  "warehouse_name"   NVARCHAR(100)  NOT NULL,
+  "location"         NVARCHAR(200),
+  "manager"          NVARCHAR(100),
+  "capacity_sqft"    INTEGER,
+  "warehouse_status" NVARCHAR(20)   DEFAULT 'ACTIVE'
+)''')
+
+warehouses = [
+    ('wh-001','MAIN','City Hall Warehouse','123 Main St, City Hall Basement','Robert Chen',8500,'ACTIVE'),
+    ('wh-002','NORTH','North District Depot','450 Oak Ave, North District','Maria Santos',5200,'ACTIVE'),
+    ('wh-003','PW','Public Works Yard','789 Industrial Blvd','James Miller',12000,'ACTIVE'),
+    ('wh-004','IT','IT Storage Room','City Hall, Room 304','Lisa Park',1200,'ACTIVE'),
+]
+for w in warehouses:
+    run('INS I_Warehouse', f'''INSERT INTO "{S}"."I_Warehouse"
+      ("warehouse_id","warehouse_code","warehouse_name","location","manager","capacity_sqft","warehouse_status")
+      VALUES('{w[0]}','{w[1]}','{w[2]}','{w[3]}','{w[4]}',{w[5]},'{w[6]}')''')
+
+# I_InventoryItem
+create_table('CRT I_InventoryItem', f'''CREATE COLUMN TABLE "{S}"."I_InventoryItem" (
+  "item_id"        NVARCHAR(50)   NOT NULL PRIMARY KEY,
+  "item_number"    NVARCHAR(20)   NOT NULL,
+  "item_name"      NVARCHAR(200)  NOT NULL,
+  "category"       NVARCHAR(50)   NOT NULL,
+  "unit"           NVARCHAR(20)   NOT NULL,
+  "unit_cost"      DECIMAL(12,2)  NOT NULL,
+  "reorder_point"  INTEGER        NOT NULL,
+  "reorder_qty"    INTEGER        NOT NULL,
+  "lead_time_days" INTEGER        DEFAULT 7,
+  "supplier"       NVARCHAR(100),
+  "warehouse_id"   NVARCHAR(50)   NOT NULL,
+  "current_stock"  INTEGER        NOT NULL DEFAULT 0,
+  "item_status"    NVARCHAR(20)   DEFAULT 'ACTIVE'
+)''')
+
+items = [
+    # (item_id, item_number, item_name, category, unit, unit_cost, reorder_pt, reorder_qty, lead_days, supplier, wh_id, current_stock, status)
+    ('itm-001','ITM-00001','Copy Paper (Case)','OFFICE_SUPPLIES','Case',42.50,10,50,3,'Office Depot','wh-001',3,'ACTIVE'),
+    ('itm-002','ITM-00002','Toner Cartridges - HP','OFFICE_SUPPLIES','Each',89.00,5,20,5,'Staples','wh-001',0,'ACTIVE'),
+    ('itm-003','ITM-00003','Ballpoint Pens (Box)','OFFICE_SUPPLIES','Box',8.75,20,100,3,'Office Depot','wh-001',45,'ACTIVE'),
+    ('itm-004','ITM-00004','Laptop Replacement Battery','IT_EQUIPMENT','Each',95.00,5,15,14,'Dell Direct','wh-004',2,'ACTIVE'),
+    ('itm-005','ITM-00005','USB Hub 7-Port','IT_EQUIPMENT','Each',34.99,10,30,7,'Amazon Business','wh-004',18,'ACTIVE'),
+    ('itm-006','ITM-00006','Network Cable Cat6 (100ft)','IT_EQUIPMENT','Roll',22.00,15,60,5,'CDW','wh-004',8,'ACTIVE'),
+    ('itm-007','ITM-00007','Engine Oil 5W-30 (Quart)','VEHICLES_PARTS','Quart',7.50,50,200,3,'AutoZone Fleet','wh-003',12,'ACTIVE'),
+    ('itm-008','ITM-00008','Air Filter - Fleet Vehicle','VEHICLES_PARTS','Each',18.00,20,80,5,'AutoZone Fleet','wh-003',0,'ACTIVE'),
+    ('itm-009','ITM-00009','Wiper Blades (Pair)','VEHICLES_PARTS','Pair',24.00,15,60,5,'AutoZone Fleet','wh-003',35,'ACTIVE'),
+    ('itm-010','ITM-00010','Hydraulic Fluid (Gallon)','MAINTENANCE_SUPPLIES','Gallon',28.50,10,40,7,'Grainger','wh-003',4,'ACTIVE'),
+    ('itm-011','ITM-00011','WD-40 Lubricant (Gallon)','MAINTENANCE_SUPPLIES','Gallon',19.00,8,30,5,'Grainger','wh-003',22,'ACTIVE'),
+    ('itm-012','ITM-00012','Duct Tape (Case 12-rolls)','MAINTENANCE_SUPPLIES','Case',48.00,5,20,3,'Home Depot','wh-003',14,'ACTIVE'),
+    ('itm-013','ITM-00013','Safety Vest Hi-Vis','SAFETY_EQUIPMENT','Each',14.00,30,100,7,'Safety Supply Co','wh-002',6,'ACTIVE'),
+    ('itm-014','ITM-00014','Hard Hat ANSI Z89.1','SAFETY_EQUIPMENT','Each',22.00,20,80,7,'Safety Supply Co','wh-002',55,'ACTIVE'),
+    ('itm-015','ITM-00015','Safety Glasses','SAFETY_EQUIPMENT','Each',6.50,40,150,5,'Safety Supply Co','wh-002',88,'ACTIVE'),
+    ('itm-016','ITM-00016','Nitrile Gloves (Box 100)','SAFETY_EQUIPMENT','Box',12.00,25,100,5,'Medline','wh-002',3,'ACTIVE'),
+    ('itm-017','ITM-00017','First Aid Kit - Large','MEDICAL_SUPPLIES','Each',65.00,5,15,7,'Medline','wh-002',9,'ACTIVE'),
+    ('itm-018','ITM-00018','AED Battery Pack','MEDICAL_SUPPLIES','Each',145.00,3,10,14,'Philips Medical','wh-001',0,'ACTIVE'),
+    ('itm-019','ITM-00019','Disinfectant Spray (Case)','CLEANING_SUPPLIES','Case',55.00,8,30,3,'Cintas','wh-002',20,'ACTIVE'),
+    ('itm-020','ITM-00020','Mop Heads (Pack 12)','CLEANING_SUPPLIES','Pack',38.00,6,24,5,'Cintas','wh-002',11,'ACTIVE'),
+    ('itm-021','ITM-00021','Trash Bags 55-gal (Case)','CLEANING_SUPPLIES','Case',42.00,10,40,3,'Cintas','wh-002',27,'ACTIVE'),
+    ('itm-022','ITM-00022','Respirator N95 (Box 20)','PROTECTIVE_GEAR','Box',28.00,15,60,7,'3M Safety','wh-002',4,'ACTIVE'),
+    ('itm-023','ITM-00023','Steel Toe Boots','PROTECTIVE_GEAR','Pair',110.00,10,30,14,'Safety Supply Co','wh-003',16,'ACTIVE'),
+    ('itm-024','ITM-00024','Traffic Cone (28in)','SAFETY_EQUIPMENT','Each',16.00,20,80,7,'Traffic Safety','wh-003',42,'ACTIVE'),
+]
+for it in items:
+    run('INS I_InventoryItem', f'''INSERT INTO "{S}"."I_InventoryItem"
+      ("item_id","item_number","item_name","category","unit","unit_cost",
+       "reorder_point","reorder_qty","lead_time_days","supplier","warehouse_id","current_stock","item_status")
+      VALUES('{it[0]}','{it[1]}','{it[2]}','{it[3]}','{it[4]}',{it[5]},
+             {it[6]},{it[7]},{it[8]},'{it[9]}','{it[10]}',{it[11]},'{it[12]}')''')
+
+# I_StockTransaction
+create_table('CRT I_StockTransaction', f'''CREATE COLUMN TABLE "{S}"."I_StockTransaction" (
+  "transaction_id"   NVARCHAR(50)   NOT NULL PRIMARY KEY,
+  "item_id"          NVARCHAR(50)   NOT NULL,
+  "transaction_type" NVARCHAR(20)   NOT NULL,
+  "quantity"         INTEGER        NOT NULL,
+  "unit_cost"        DECIMAL(12,2)  NOT NULL,
+  "transaction_date" DATE           NOT NULL,
+  "reference_number" NVARCHAR(50),
+  "performed_by"     NVARCHAR(100),
+  "notes"            NVARCHAR(500)
+)''')
+
+txns = [
+    # Receipts (positive qty)
+    ('txn-001','itm-001','RECEIPT',100,42.50,'2026-01-10','PO-2026-0041','Robert Chen','Quarterly paper order'),
+    ('txn-002','itm-003','RECEIPT',200,8.75, '2026-01-10','PO-2026-0041','Robert Chen','Quarterly stationery'),
+    ('txn-003','itm-007','RECEIPT',300,7.50, '2026-01-12','PO-2026-0042','James Miller','Fleet oil restock'),
+    ('txn-004','itm-009','RECEIPT',80, 24.00,'2026-01-12','PO-2026-0042','James Miller','Wiper blade restock'),
+    ('txn-005','itm-014','RECEIPT',100,22.00,'2026-01-15','PO-2026-0043','Maria Santos','Safety equipment Q1'),
+    ('txn-006','itm-015','RECEIPT',150,6.50, '2026-01-15','PO-2026-0043','Maria Santos','Safety glasses Q1'),
+    ('txn-007','itm-019','RECEIPT',60, 55.00,'2026-01-20','PO-2026-0044','Maria Santos','Cleaning supplies'),
+    ('txn-008','itm-021','RECEIPT',80, 42.00,'2026-01-20','PO-2026-0044','Maria Santos','Trash bags restock'),
+    ('txn-009','itm-011','RECEIPT',40, 19.00,'2026-02-05','PO-2026-0055','James Miller','Lubricant restock'),
+    ('txn-010','itm-012','RECEIPT',30, 48.00,'2026-02-05','PO-2026-0055','James Miller','Duct tape restock'),
+    ('txn-011','itm-005','RECEIPT',50, 34.99,'2026-02-08','PO-2026-0056','Lisa Park','IT peripherals Q1'),
+    ('txn-012','itm-006','RECEIPT',80, 22.00,'2026-02-08','PO-2026-0056','Lisa Park','Network cables'),
+    ('txn-013','itm-017','RECEIPT',20, 65.00,'2026-02-12','PO-2026-0057','Maria Santos','First aid restock'),
+    ('txn-014','itm-023','RECEIPT',30, 110.00,'2026-02-15','PO-2026-0058','James Miller','Safety boots batch'),
+    ('txn-015','itm-024','RECEIPT',60, 16.00,'2026-02-15','PO-2026-0058','James Miller','Traffic cones'),
+    # Issues (negative qty)
+    ('txn-016','itm-001','ISSUE',-40,42.50,'2026-01-14','REQ-0201','Robert Chen','Admin dept weekly'),
+    ('txn-017','itm-001','ISSUE',-30,42.50,'2026-02-03','REQ-0218','Robert Chen','Finance dept supply'),
+    ('txn-018','itm-001','ISSUE',-27,42.50,'2026-03-01','REQ-0244','Robert Chen','March office supply'),
+    ('txn-019','itm-003','ISSUE',-80,8.75, '2026-01-16','REQ-0202','Robert Chen','Dept pen distribution'),
+    ('txn-020','itm-003','ISSUE',-75,8.75, '2026-02-10','REQ-0219','Robert Chen','Restocking depts'),
+    ('txn-021','itm-007','ISSUE',-120,7.50,'2026-01-18','WO-2026-0312','James Miller','Fleet oil change batch'),
+    ('txn-022','itm-007','ISSUE',-100,7.50,'2026-02-14','WO-2026-0334','James Miller','Monthly fleet service'),
+    ('txn-023','itm-007','ISSUE',-68, 7.50,'2026-03-10','WO-2026-0356','James Miller','Spring fleet service'),
+    ('txn-024','itm-009','ISSUE',-20,24.00,'2026-01-22','WO-2026-0315','James Miller','Wiper replacement'),
+    ('txn-025','itm-009','ISSUE',-25,24.00,'2026-02-20','WO-2026-0337','James Miller','Wiper batch replace'),
+    ('txn-026','itm-013','ISSUE',-30,14.00,'2026-01-17','REQ-0203','Maria Santos','Crew safety vests'),
+    ('txn-027','itm-013','ISSUE',-30,14.00,'2026-02-17','REQ-0226','Maria Santos','New crew onboarding'),
+    ('txn-028','itm-014','ISSUE',-25,22.00,'2026-01-19','REQ-0204','Maria Santos','Hard hat issue Q1'),
+    ('txn-029','itm-015','ISSUE',-40,6.50,'2026-01-21','REQ-0205','Maria Santos','Safety glasses crew'),
+    ('txn-030','itm-015','ISSUE',-22,6.50,'2026-02-22','REQ-0231','Maria Santos','Replacement glasses'),
+    ('txn-031','itm-019','ISSUE',-20,55.00,'2026-01-25','REQ-0208','Maria Santos','Cleaning dept issue'),
+    ('txn-032','itm-019','ISSUE',-20,55.00,'2026-02-25','REQ-0234','Maria Santos','Monthly cleaning'),
+    ('txn-033','itm-021','ISSUE',-30,42.00,'2026-01-28','REQ-0210','Maria Santos','Weekly trash bags'),
+    ('txn-034','itm-021','ISSUE',-23,42.00,'2026-02-28','REQ-0237','Maria Santos','Feb trash bags'),
+    # Adjustments
+    ('txn-035','itm-002','ADJUSTMENT',-5,89.00,'2026-01-31','ADJ-0091','Lisa Park','Write-off damaged stock'),
+    ('txn-036','itm-008','ADJUSTMENT',-3,18.00,'2026-02-28','ADJ-0098','James Miller','Expired filters removed'),
+    ('txn-037','itm-018','ADJUSTMENT',-2,145.00,'2026-01-31','ADJ-0092','Maria Santos','Expired AED batteries'),
+    # Transfers
+    ('txn-038','itm-011','TRANSFER',8,19.00,'2026-02-10','TRF-0021','James Miller','Transfer to North Depot'),
+    ('txn-039','itm-012','TRANSFER',5,48.00,'2026-02-10','TRF-0021','James Miller','Transfer to North Depot'),
+    # Return
+    ('txn-040','itm-004','RETURN',3,95.00,'2026-03-05','RET-0011','Lisa Park','Unused batteries returned'),
+]
+for t in txns:
+    run('INS I_StockTransaction', f'''INSERT INTO "{S}"."I_StockTransaction"
+      ("transaction_id","item_id","transaction_type","quantity","unit_cost",
+       "transaction_date","reference_number","performed_by","notes")
+      VALUES('{t[0]}','{t[1]}','{t[2]}',{t[3]},{t[4]},
+             '{t[5]}','{t[6]}','{t[7]}','{t[8]}')''')
+
+# V_InventoryHealth
+run('VW V_InventoryHealth', f'''CREATE OR REPLACE VIEW "{S}"."V_InventoryHealth" AS
+SELECT
+  i."item_id", i."item_number", i."item_name", i."category",
+  i."unit", i."unit_cost", i."current_stock", i."reorder_point",
+  i."reorder_qty", i."lead_time_days", i."supplier", i."item_status",
+  w."warehouse_name", w."warehouse_code", w."location",
+  ROUND(i."current_stock" * i."unit_cost", 2)  AS "stock_value",
+  CASE
+    WHEN i."current_stock" = 0                           THEN 'OUT_OF_STOCK'
+    WHEN i."current_stock" <= i."reorder_point"          THEN 'LOW_STOCK'
+    WHEN i."current_stock" > i."reorder_point" * 2      THEN 'OVERSTOCKED'
+    ELSE 'ADEQUATE'
+  END AS STOCK_STATUS
+FROM "{S}"."I_InventoryItem" i
+JOIN "{S}"."I_Warehouse"     w ON w."warehouse_id" = i."warehouse_id"
+WHERE i."item_status" = 'ACTIVE'
+ORDER BY
+  CASE
+    WHEN i."current_stock" = 0                      THEN 0
+    WHEN i."current_stock" <= i."reorder_point"     THEN 1
+    ELSE 2
+  END, i."category"''')
+
 # ── Final row counts ──────────────────────────────────────────────────────────
 print(f"\n{'='*65}")
 print(f"  DONE  ✓ {ok}  ✗ {err}  Total: {ok+err}")
@@ -1694,6 +1867,7 @@ for t in [
     'I_BudgetLine','I_JournalEntry','I_CloseTask','I_InterfundTransfer',
     'I_CapitalProject','I_ChangeOrder','I_ProjectFunding','I_Milestone',
     'I_Asset','I_WorkOrder','I_PMPlan','I_FailureEvent',
+    'I_Warehouse','I_InventoryItem','I_StockTransaction',
 ]:
     cur.execute(f'SELECT COUNT(*) FROM "{S}"."{t}"')
     cnt = cur.fetchone()[0]

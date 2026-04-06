@@ -260,6 +260,47 @@ export const TOOLS = [
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
+  // Inventory & Warehouse (Phase 2 Sprint 13)
+  {
+    type: 'function',
+    function: {
+      name: 'get_inventory_kpis',
+      description: 'Get inventory KPIs: total active items, total inventory value, out-of-stock count, low-stock count, adequate-stock count, receipts last 30 days, issues value YTD. Use for high-level inventory health questions, stockout summaries, total warehouse value.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_inventory_health',
+      description: 'Get full inventory health dashboard: every active item with stock status (OUT_OF_STOCK/LOW_STOCK/ADEQUATE/OVERSTOCKED), current stock, reorder point, unit cost, stock value, supplier, warehouse. Use for item-level stock questions, which items are out of stock, inventory valuation by item.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_stock_transactions',
+      description: 'Get stock transactions from the last 90 days: receipts, issues, adjustments, transfers, returns — with item name, category, warehouse, quantity, unit cost, line value, reference number. Use for movement history questions, recent receipts or issues, transaction audit trail.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_warehouse_summary',
+      description: 'Get warehouse summary: each warehouse with item count, total units, inventory value, out-of-stock items, low-stock items, manager, capacity. Use for warehouse-level questions, which warehouse has the most stockouts, warehouse utilization.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_stock_alerts',
+      description: 'Get items at or below reorder point: item details, current stock vs reorder point, reorder quantity, lead time, reorder cost, alert type (OUT_OF_STOCK/LOW_STOCK). Use for procurement planning, which items need to be ordered now, total reorder spend needed.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
 ];
 
 // Maps tool name → service call
@@ -267,6 +308,7 @@ import { GrantsService }      from '../grants/grants.service.js';
 import { FundsService }       from '../funds/funds.service.js';
 import { CapitalService }     from '../capital/capital.service.js';
 import { AssetsService }      from '../assets/assets.service.js';
+import { InventoryService }   from '../inventory/inventory.service.js';
 import { OutcomesService }    from '../outcomes/outcomes.service.js';
 import { ForecastService }    from '../forecast/forecast.service.js';
 import { ProcurementService } from '../procurement/procurement.service.js';
@@ -312,4 +354,10 @@ export const TOOL_EXECUTORS = {
   get_change_orders:         () => CapitalService.getChangeOrders(),
   get_milestone_status:      () => CapitalService.getMilestones(),
   get_cip_funding:           () => CapitalService.getFunding(),
+  // Inventory & Warehouse (Phase 2 Sprint 13)
+  get_inventory_kpis:        () => InventoryService.getKPIs(),
+  get_inventory_health:      () => InventoryService.getItems(),
+  get_stock_transactions:    () => InventoryService.getTransactions(),
+  get_warehouse_summary:     () => InventoryService.getWarehouses(),
+  get_stock_alerts:          () => InventoryService.getAlerts(),
 };
