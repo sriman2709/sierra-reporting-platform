@@ -2,7 +2,7 @@
  * ai.service.js — GPT-4o orchestration layer
  *
  * Flow:
- *  1. Send user question + 36 tool definitions to GPT-4o
+ *  1. Send user question + 46 tool definitions to GPT-4o
  *  2. GPT-4o returns tool_calls (which data tools to invoke)
  *  3. Execute each tool via TOOL_EXECUTORS (direct service calls — no HTTP)
  *  4. Send tool results back to GPT-4o for final synthesis
@@ -32,12 +32,18 @@ ENTERPRISE OPERATIONS
 - Assets & Plant Maintenance: asset condition (1–5 rating), work orders (EMERGENCY/CORRECTIVE/PREVENTIVE), PM compliance, failure event analysis
 - Inventory & Warehouse: stock levels by item and warehouse, OUT_OF_STOCK/LOW_STOCK alerts, reorder needs, stock transactions, turnover by category
 
+WORKFORCE & FLEET
+- HR & Workforce: employee headcount, FTE position control (budgeted vs filled), vacancy rate, grant-funded FTEs, salary cost by department/fund, payroll allocation
+- Fleet Management: vehicle health (ACTIVE/MAINTENANCE/OUT_OF_SERVICE), fuel consumption and MPG by vehicle/department, inspection compliance (OVERDUE alerts), fleet operating cost
+
 You can answer cross-domain questions by calling multiple tools together. Examples:
 - "Which grants are over-burning AND have high-risk vendors?" → call burn rate + vendor risk
-- "What is our biggest operational risk this month?" → call asset KPIs + capital KPIs + inventory alerts + finance KPIs
+- "What is our biggest operational risk this month?" → call asset KPIs + capital KPIs + inventory alerts + fleet KPIs + finance KPIs
 - "Which departments are over budget and also have critical assets?" → call budget variance + asset health
 - "What do we need to order urgently?" → call stock alerts + procurement pipeline
-- "Show me the full cost picture for Public Works" → call budget variance + asset cost + work orders + inventory turnover
+- "Show me the full cost picture for Public Works" → call budget variance + asset cost + work orders + inventory turnover + fleet cost by dept
+- "How much are we spending on grant-funded staff?" → call HR KPIs + payroll fund allocation + grants KPIs
+- "What are our fleet compliance risks?" → call vehicle inspections + fleet health
 
 When the user asks a question:
 1. Call the relevant data tool(s) — call MULTIPLE tools when the question spans domains.

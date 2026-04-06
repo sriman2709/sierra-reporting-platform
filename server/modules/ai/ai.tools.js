@@ -301,6 +301,88 @@ export const TOOLS = [
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
+  // HR & Workforce (Phase 3 Sprint 14)
+  {
+    type: 'function',
+    function: {
+      name: 'get_hr_kpis',
+      description: 'Get HR KPIs: total employees, full-time/part-time/contractor counts, on-leave count, avg salary, total salary budget, grant-funded FTE count, budgeted vs filled FTE, vacancy rate %. Use for workforce summary questions, headcount, salary cost, vacancy analysis.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_workforce_health',
+      description: 'Get employee health dashboard: every active employee with department, position, employment type, annual salary, tenure years, grant-funded flag, health status. Use for employee-level questions, who is grant-funded, salary by employee, workforce health.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_position_control',
+      description: 'Get position control report: every active position with budgeted FTE, filled FTE, vacancy FTE, salary budget, avg budgeted salary, fund code, fill status (VACANT/PARTIALLY_FILLED/FULLY_STAFFED). Use for vacancy questions, position budget vs actuals, FTE gap analysis.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_dept_workforce_summary',
+      description: 'Get workforce summary by department: employee count, avg salary, total salary, avg tenure years, grant-funded count, on-leave count. Use for department-level HR questions, which departments have most staff, salary cost by department.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_payroll_fund_allocation',
+      description: 'Get payroll cost allocation by fund and department: employee count, total gross pay, payroll runs, avg gross pay per run. Use for grant-funded salary compliance, which funds are paying which departments, payroll audit questions.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  // Fleet Management (Phase 3 Sprint 15)
+  {
+    type: 'function',
+    function: {
+      name: 'get_fleet_kpis',
+      description: 'Get fleet KPIs: total vehicles, active/out-of-service/in-maintenance counts, avg odometer, fuel cost YTD, fuel gallons YTD, inspections overdue. Use for fleet summary questions, fleet availability, fuel spend.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_fleet_health',
+      description: 'Get vehicle health dashboard: every vehicle with make/model/year, department, fuel type, odometer, acquisition cost, fuel cost YTD, status (ACTIVE/MAINTENANCE/OUT_OF_SERVICE), health status (GOOD/FAIR/POOR/CRITICAL). Use for vehicle-level questions, which vehicles need attention.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_fuel_consumption',
+      description: 'Get fuel records from the last 90 days: date, vehicle, department, gallons, cost per gallon, total cost, odometer, MPG. Use for fuel efficiency questions, high-cost vehicles, MPG analysis, fuel spend trends.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_fleet_cost_by_dept',
+      description: 'Get fleet operating cost by department: vehicle count, fleet value, fuel cost YTD, gallons YTD, avg mileage. Use for department fleet cost questions, which department spends most on fuel, fleet utilization by department.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_vehicle_inspections',
+      description: 'Get vehicle inspection records: inspection type, last inspection date, next due date, days overdue, pass/fail, cost, status (PASSED/FAILED/SCHEDULED/OVERDUE). Use for compliance questions, overdue inspections, inspection cost analysis.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
 ];
 
 // Maps tool name → service call
@@ -309,6 +391,8 @@ import { FundsService }       from '../funds/funds.service.js';
 import { CapitalService }     from '../capital/capital.service.js';
 import { AssetsService }      from '../assets/assets.service.js';
 import { InventoryService }   from '../inventory/inventory.service.js';
+import { HRService }          from '../hr/hr.service.js';
+import { FleetService }       from '../fleet/fleet.service.js';
 import { OutcomesService }    from '../outcomes/outcomes.service.js';
 import { ForecastService }    from '../forecast/forecast.service.js';
 import { ProcurementService } from '../procurement/procurement.service.js';
@@ -360,4 +444,16 @@ export const TOOL_EXECUTORS = {
   get_stock_transactions:    () => InventoryService.getTransactions(),
   get_warehouse_summary:     () => InventoryService.getWarehouses(),
   get_stock_alerts:          () => InventoryService.getAlerts(),
+  // HR & Workforce (Phase 3 Sprint 14)
+  get_hr_kpis:               () => HRService.getKPIs(),
+  get_workforce_health:      () => HRService.getEmployees(),
+  get_position_control:      () => HRService.getPositions(),
+  get_dept_workforce_summary:() => HRService.getTurnover(),
+  get_payroll_fund_allocation:() => HRService.getFundAllocation(),
+  // Fleet Management (Phase 3 Sprint 15)
+  get_fleet_kpis:            () => FleetService.getKPIs(),
+  get_fleet_health:          () => FleetService.getVehicles(),
+  get_fuel_consumption:      () => FleetService.getFuel(),
+  get_fleet_cost_by_dept:    () => FleetService.getCostByDept(),
+  get_vehicle_inspections:   () => FleetService.getInspections(),
 };

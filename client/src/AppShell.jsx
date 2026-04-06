@@ -17,6 +17,8 @@ const NAV = [
   { to: '/capital-projects',  label: 'Capital Projects & CIP',icon: '🏗' },
   { to: '/assets',            label: 'Assets & Maintenance',  icon: '🔧' },
   { to: '/inventory',         label: 'Inventory & Warehouse', icon: '📦' },
+  { to: '/hr',                label: 'HR & Workforce',        icon: '👥' },
+  { to: '/fleet',             label: 'Fleet Management',      icon: '🚗' },
   { section: 'AI' },
   { to: '/ai',           label: 'Sierra Intelligence',   icon: '✦'  },
   { section: 'Resources' },

@@ -16,6 +16,8 @@ import Finance        from './pages/Finance';
 import CapitalProjects from './pages/CapitalProjects';
 import Assets         from './pages/Assets';
 import Inventory      from './pages/Inventory';
+import HR             from './pages/HR';
+import Fleet          from './pages/Fleet';
 import Roadmap        from './pages/Roadmap';
 
 const PAGE_TITLES = {
@@ -33,6 +35,8 @@ const PAGE_TITLES = {
   '/capital-projects':   'Capital Projects & CIP',
   '/assets':             'Assets & Plant Maintenance',
   '/inventory':          'Inventory & Warehouse',
+  '/hr':                 'HR & Workforce',
+  '/fleet':              'Fleet Management',
   '/roadmap':            'Enterprise Roadmap',
 };
 
@@ -63,6 +67,8 @@ export default function App() {
           <Route path="/capital-projects" element={<CapitalProjects />} />
           <Route path="/assets"           element={<Assets />} />
           <Route path="/inventory"        element={<Inventory />} />
+          <Route path="/hr"               element={<HR />} />
+          <Route path="/fleet"            element={<Fleet />} />
           <Route path="/roadmap"          element={<Roadmap />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

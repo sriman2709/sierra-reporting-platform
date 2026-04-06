@@ -17,6 +17,8 @@ import financeRoutes     from './modules/finance/finance.routes.js';
 import capitalRoutes     from './modules/capital/capital.routes.js';
 import assetsRoutes      from './modules/assets/assets.routes.js';
 import inventoryRoutes   from './modules/inventory/inventory.routes.js';
+import hrRoutes          from './modules/hr/hr.routes.js';
+import fleetRoutes       from './modules/fleet/fleet.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app  = express();
@@ -55,6 +57,8 @@ app.use('/api/finance',     financeRoutes);
 app.use('/api/capital',     capitalRoutes);
 app.use('/api/assets',      assetsRoutes);
 app.use('/api/inventory',   inventoryRoutes);
+app.use('/api/hr',          hrRoutes);
+app.use('/api/fleet',       fleetRoutes);
 
 // ── Serve React build in production ──────────────────────────────────────────
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
