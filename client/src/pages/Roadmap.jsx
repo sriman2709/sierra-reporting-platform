@@ -3,7 +3,7 @@ const PHASE_COLORS = {
   phase1:   { bg: '#ebf8ff', border: '#90cdf4', badge: '#3182ce', label: 'LIVE' },
   phase2:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase3:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
-  phase4:   { bg: '#f3e8fd', border: '#d6bcfa', badge: '#805ad5', label: 'PHASE 4' },
+  phase4:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase5:   { bg: '#e0f7fa', border: '#80deea', badge: '#0097a7', label: 'PHASE 5' },
   phase6:   { bg: '#fff3e0', border: '#ffcc80', badge: '#e65100', label: 'PHASE 6' },
 };
@@ -195,7 +195,7 @@ export default function Roadmap() {
 
       {/* ── Phase 4 ── */}
       <div style={{ marginBottom: 28 }}>
-        <SectionHeader color="#805ad5" label="PHASE 4 — TREASURY & EXECUTIVE" />
+        <SectionHeader color="#38a169" label="PHASE 4 — TREASURY & EXECUTIVE · LIVE" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           <RoadmapCard icon="🏦" title="Treasury & Revenue" phase="phase4" kpis={['Cash position dashboard', 'Revenue recognition by fund', 'Investment portfolio tracking', 'Debt service management', 'Tax revenue trend analysis']} />
           <RoadmapCard icon="🎯" title="Executive Command Center" phase="phase4" kpis={['Cross-domain executive scorecard', 'Alert & exception aggregator', 'City-level KPI benchmarking', 'Multi-period trend overlays', 'Board reporting package']} />

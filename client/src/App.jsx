@@ -17,8 +17,10 @@ import CapitalProjects from './pages/CapitalProjects';
 import Assets         from './pages/Assets';
 import Inventory      from './pages/Inventory';
 import HR             from './pages/HR';
-import Fleet          from './pages/Fleet';
-import Roadmap        from './pages/Roadmap';
+import Fleet           from './pages/Fleet';
+import Treasury        from './pages/Treasury';
+import ExecutiveCenter from './pages/ExecutiveCenter';
+import Roadmap         from './pages/Roadmap';
 
 const PAGE_TITLES = {
   '/':             'Platform Overview',
@@ -37,6 +39,8 @@ const PAGE_TITLES = {
   '/inventory':          'Inventory & Warehouse',
   '/hr':                 'HR & Workforce',
   '/fleet':              'Fleet Management',
+  '/treasury':           'Treasury & Revenue',
+  '/executive':          'Executive Command Center',
   '/roadmap':            'Enterprise Roadmap',
 };
 
@@ -69,6 +73,8 @@ export default function App() {
           <Route path="/inventory"        element={<Inventory />} />
           <Route path="/hr"               element={<HR />} />
           <Route path="/fleet"            element={<Fleet />} />
+          <Route path="/treasury"         element={<Treasury />} />
+          <Route path="/executive"        element={<ExecutiveCenter />} />
           <Route path="/roadmap"          element={<Roadmap />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
