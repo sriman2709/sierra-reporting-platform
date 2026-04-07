@@ -16,7 +16,7 @@ check() {
   local label="$1" url="$2" expect="$3"
   local body; body=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $TOKEN" "$url")
   local code; code=$(echo "$body" | tail -1)
-  local json; json=$(echo "$body" | head -n -1)
+  local json; json=$(echo "$body" | awk 'NR>1{print prev} {prev=$0}')
 
   if [[ "$code" != "200" ]]; then
     echo -e "  ${RED}✗${NC} $label  →  HTTP $code"
@@ -46,7 +46,7 @@ echo "────────────────────────�
 
 AUTH=$(curl -s -X POST "$BASE/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"sierra2024"}')
+  -d '{"username":"admin","password":"Admin@123"}')
 
 TOKEN=$(echo "$AUTH" | grep -o '"token":"[^"]*"' | sed 's/"token":"//;s/"//')
 

@@ -3,28 +3,40 @@ import { SCHEMA as S } from '../../connectors/hana.js';
 export const Q = {
 
   // ── Cross-domain executive scorecard ──────────────────────────────────────
+  // Column names verified against each module's queries:
+  //   I_GrantMaster  : award_status, award_amount
+  //   I_PurchaseOrder: po_status='OPEN'
+  //   I_Invoice      : invoice_status IN ('PENDING','OVERDUE'), amount
+  //   I_CapitalProject: project_status='ACTIVE', actual_cost → use revised_budget from I_BudgetLine
+  //   I_Asset        : asset_status='ACTIVE'
+  //   I_WorkOrder    : wo_status='OPEN'
+  //   I_Employee     : emp_status (not 'TERMINATED')
+  //   I_Position     : position_status='VACANT'
+  //   I_Vehicle      : vehicle_status
+  //   I_InventoryItem: quantity_on_hand, reorder_point
+  //   I_BudgetLine   : revised_budget, actuals, fiscal_year
   crossDomainKPIs: `
     SELECT
       /* Grants */
       (SELECT COUNT(*)
          FROM ${S}."I_GrantMaster"
-        WHERE "grant_status" = 'ACTIVE')                                       AS "active_grants",
+        WHERE "award_status" = 'ACTIVE')                                       AS "active_grants",
       (SELECT ROUND(SUM("award_amount"), 2)
          FROM ${S}."I_GrantMaster"
-        WHERE "grant_status" = 'ACTIVE')                                       AS "total_grant_awards",
+        WHERE "award_status" = 'ACTIVE')                                       AS "total_grant_awards",
 
       /* Procurement */
       (SELECT COUNT(*)
          FROM ${S}."I_PurchaseOrder"
         WHERE "po_status" = 'OPEN')                                            AS "open_pos",
-      (SELECT ROUND(SUM("invoice_amount"), 2)
+      (SELECT ROUND(SUM("amount"), 2)
          FROM ${S}."I_Invoice"
-        WHERE "payment_status" = 'PENDING')                                    AS "pending_invoice_value",
+        WHERE "invoice_status" IN ('PENDING','OVERDUE'))                       AS "pending_invoice_value",
 
       /* Capital Projects */
       (SELECT COUNT(*)
          FROM ${S}."I_CapitalProject"
-        WHERE "project_status" = 'IN_PROGRESS')                               AS "active_projects",
+        WHERE "project_status" = 'ACTIVE')                                     AS "active_projects",
       (SELECT ROUND(SUM("actual_cost"), 2)
          FROM ${S}."I_CapitalProject")                                         AS "capital_spend_ytd",
 
@@ -39,7 +51,7 @@ export const Q = {
       /* HR */
       (SELECT COUNT(*)
          FROM ${S}."I_Employee"
-        WHERE "employment_status" = 'ACTIVE')                                  AS "active_employees",
+        WHERE "emp_status" != 'TERMINATED')                                    AS "active_employees",
       (SELECT COUNT(*)
          FROM ${S}."I_Position"
         WHERE "position_status" = 'VACANT')                                    AS "open_positions",
@@ -57,10 +69,10 @@ export const Q = {
          FROM ${S}."I_InventoryItem"
         WHERE "quantity_on_hand" <= "reorder_point")                           AS "low_stock_items",
 
-      /* Finance */
-      (SELECT ROUND(SUM("actual_amount"), 2)
+      /* Finance — use actuals from BudgetLine (fiscal_year stored as 'FY2026') */
+      (SELECT ROUND(SUM("actuals"), 2)
          FROM ${S}."I_BudgetLine"
-        WHERE "fiscal_year" = YEAR(CURRENT_DATE))                              AS "total_expenditures_ytd",
+        WHERE "fiscal_year" = CONCAT('FY', TO_VARCHAR(YEAR(CURRENT_DATE))))   AS "total_expenditures_ytd",
 
       /* Treasury */
       (SELECT ROUND(SUM("balance"), 2)
@@ -91,16 +103,20 @@ export const Q = {
     FROM ${S}."I_KPIBenchmark"
     ORDER BY "domain" ASC, "kpi_name" ASC`,
 
-  // ── Multi-period grant spend trend (last 6 months) ────────────────────────
+  // ── Multi-period grant spend trend — derived from I_BudgetLine actuals ─────
+  // Shows actuals per fiscal year for the last 2 years as a simplified trend
   grantTrend: `
     SELECT
-      TO_VARCHAR("expenditure_date", 'YYYY-MM')                               AS "period",
-      ROUND(SUM("expenditure_amount"), 2)                                     AS "grant_spend"
-    FROM ${S}."I_Document"
-    WHERE "doc_type" = 'EXPENDITURE'
-      AND "expenditure_date" >= ADD_MONTHS(CURRENT_DATE, -6)
-    GROUP BY TO_VARCHAR("expenditure_date", 'YYYY-MM')
-    ORDER BY "period" ASC`,
+      "fiscal_year"                                                             AS "period",
+      ROUND(SUM("actuals"), 2)                                                 AS "grant_spend"
+    FROM ${S}."I_BudgetLine"
+    WHERE "fiscal_year" IN (
+      CONCAT('FY', TO_VARCHAR(YEAR(CURRENT_DATE))),
+      CONCAT('FY', TO_VARCHAR(YEAR(CURRENT_DATE) - 1)),
+      CONCAT('FY', TO_VARCHAR(YEAR(CURRENT_DATE) - 2))
+    )
+    GROUP BY "fiscal_year"
+    ORDER BY "fiscal_year" ASC`,
 
   // ── Domain risk summary ──────────────────────────────────────────────────
   domainRisk: `
@@ -115,16 +131,15 @@ export const Q = {
     GROUP BY "domain"
     ORDER BY "high_count" DESC, "total_alerts" DESC`,
 
-  // ── Budget vs actual by dept (Finance) ──────────────────────────────────
+  // ── Budget vs actual by dept — using verified column names ───────────────
   budgetActual: `
     SELECT
       "department",
-      ROUND(SUM("budget_amount"), 2)                                          AS "total_budget",
-      ROUND(SUM("actual_amount"), 2)                                          AS "total_actual",
-      ROUND(SUM("budget_amount") - SUM("actual_amount"), 2)                   AS "variance",
-      ROUND(SUM("actual_amount") / NULLIF(SUM("budget_amount"), 0) * 100, 1)  AS "utilization_pct"
+      ROUND(SUM("revised_budget"), 2)                                         AS "total_budget",
+      ROUND(SUM("actuals"), 2)                                                AS "total_actual",
+      ROUND(SUM("revised_budget") - SUM("actuals"), 2)                        AS "variance",
+      ROUND(SUM("actuals") / NULLIF(SUM("revised_budget"), 0) * 100, 1)       AS "utilization_pct"
     FROM ${S}."I_BudgetLine"
-    WHERE "fiscal_year" = YEAR(CURRENT_DATE)
     GROUP BY "department"
     ORDER BY "utilization_pct" DESC`,
 };
