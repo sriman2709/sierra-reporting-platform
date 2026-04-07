@@ -21,6 +21,7 @@ import Fleet           from './pages/Fleet';
 import Treasury        from './pages/Treasury';
 import ExecutiveCenter from './pages/ExecutiveCenter';
 import Roadmap         from './pages/Roadmap';
+import Transparency    from './pages/Transparency';
 
 const PAGE_TITLES = {
   '/':             'Platform Overview',
@@ -55,7 +56,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login"        element={<Login />} />
+        <Route path="/transparency" element={<Transparency />} />  {/* public — no auth */}
         <Route element={<RequireAuth />}>
           <Route index          element={<Dashboard />} />
           <Route path="/grants"    element={<Grants />} />

@@ -4,7 +4,7 @@ const PHASE_COLORS = {
   phase2:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase3:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase4:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
-  phase5:   { bg: '#e0f7fa', border: '#80deea', badge: '#0097a7', label: 'PHASE 5' },
+  phase5:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase6:   { bg: '#fff3e0', border: '#ffcc80', badge: '#e65100', label: 'PHASE 6' },
 };
 
@@ -204,7 +204,7 @@ export default function Roadmap() {
 
       {/* ── Phase 5 ── */}
       <div style={{ marginBottom: 28 }}>
-        <SectionHeader color="#0097a7" label="PHASE 5 — PUBLIC TRANSPARENCY" />
+        <SectionHeader color="#38a169" label="PHASE 5 — PUBLIC TRANSPARENCY · LIVE" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           <RoadmapCard icon="🌐" title="Public Transparency Portal" phase="phase5" kpis={['Public-facing grant awards dashboard', 'Spending transparency by fund', 'Program outcomes for citizens', 'CAFR-ready financial summaries']} />
         </div>

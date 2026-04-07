@@ -24,6 +24,8 @@ const NAV = [
   { to: '/executive',         label: 'Executive Command Ctr', icon: '🎯' },
   { section: 'AI' },
   { to: '/ai',           label: 'Sierra Intelligence',   icon: '✦'  },
+  { section: 'Phase 5 · Public Transparency' },
+  { to: '/transparency', label: 'Public Portal',         icon: '🌐' },
   { section: 'Resources' },
   { to: '/guide',        label: 'SAC Dev Guide',         icon: '📖' },
   { to: '/roadmap',      label: 'Roadmap',               icon: '🗺', roadmap: true },

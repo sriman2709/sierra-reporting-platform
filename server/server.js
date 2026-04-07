@@ -19,8 +19,9 @@ import assetsRoutes      from './modules/assets/assets.routes.js';
 import inventoryRoutes   from './modules/inventory/inventory.routes.js';
 import hrRoutes          from './modules/hr/hr.routes.js';
 import fleetRoutes       from './modules/fleet/fleet.routes.js';
-import treasuryRoutes    from './modules/treasury/treasury.routes.js';
-import executiveRoutes   from './modules/executive/executive.routes.js';
+import treasuryRoutes      from './modules/treasury/treasury.routes.js';
+import executiveRoutes     from './modules/executive/executive.routes.js';
+import transparencyRoutes  from './modules/transparency/transparency.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app  = express();
@@ -63,6 +64,7 @@ app.use('/api/hr',          hrRoutes);
 app.use('/api/fleet',       fleetRoutes);
 app.use('/api/treasury',    treasuryRoutes);
 app.use('/api/executive',   executiveRoutes);
+app.use('/api/public',      transparencyRoutes);   // Phase 5 — no auth required
 
 // ── Serve React build in production ──────────────────────────────────────────
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
