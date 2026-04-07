@@ -201,7 +201,7 @@ export default function AIChat() {
         <div>
           <h2 style={{ margin: 0, color: '#fff', fontSize: 18, fontWeight: 700 }}>Sierra Intelligence</h2>
           <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
-            AI Analyst · Live SAP HANA Cloud data · GPT-4o powered
+            AI Analyst · Live SAP HANA Cloud data · Powered by Sierra AI
           </p>
         </div>
       </div>

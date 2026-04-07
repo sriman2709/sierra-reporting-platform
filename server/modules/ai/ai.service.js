@@ -1,12 +1,12 @@
 /**
- * ai.service.js — GPT-4o orchestration layer
+ * ai.service.js — Sierra Intelligence AI orchestration layer
  *
  * Flow:
- *  1. Send user question + 46 tool definitions to GPT-4o
- *  2. GPT-4o returns tool_calls (which data tools to invoke)
+ *  1. Send user question + tool definitions to Sierra AI
+ *  2. Sierra AI returns tool_calls (which data tools to invoke)
  *  3. Execute each tool via TOOL_EXECUTORS (direct service calls — no HTTP)
- *  4. Send tool results back to GPT-4o for final synthesis
- *  5. GPT-4o returns { answer, chart } JSON
+ *  4. Send tool results back to Sierra AI for final synthesis
+ *  5. Returns { answer, chart } JSON
  */
 import OpenAI from 'openai';
 import { TOOLS, TOOL_EXECUTORS } from './ai.tools.js';
@@ -76,9 +76,9 @@ export async function askAI(question) {
     { role: 'user',   content: question },
   ];
 
-  // ── Step 1: Ask GPT-4o which tools to call ────────────────────────────────
+  // ── Step 1: Ask Sierra AI which tools to call ────────────────────────────
   const step1 = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages,
     tools: TOOLS,
     tool_choice: 'auto',
@@ -127,7 +127,7 @@ export async function askAI(question) {
 
   // ── Step 3: Send results back for synthesis ────────────────────────────────
   const step2 = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: [
       ...messages,
       assistantMsg,

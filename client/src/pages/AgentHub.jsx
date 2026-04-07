@@ -2,7 +2,7 @@
  * AgentHub.jsx  –  Phase 6 · Agentic AI
  *
  * Four autonomous domain agents that pre-fetch all relevant data,
- * synthesize it through GPT-4o, and return a structured AgentReport.
+ * synthesize it through Sierra AI, and return a structured AgentReport.
  *
  * Layout:
  *  ┌─────────────────────────────────────────────────────────┐
@@ -374,7 +374,7 @@ export default function AgentHub() {
               Sierra Agentic AI
             </h1>
             <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
-              Autonomous domain agents — pre-fetch all data, synthesize with GPT-4o, return structured intelligence reports.
+              Autonomous domain agents — pre-fetch all data, synthesize with Sierra AI, return structured intelligence reports.
             </p>
           </div>
         </div>
@@ -430,7 +430,7 @@ export default function AgentHub() {
             {AGENTS.find(a => a.type === loadingType)?.name} is running…
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <ThinkingDots /> Fetching data and synthesizing analysis with GPT-4o
+            <ThinkingDots /> Fetching live data and synthesizing analysis with Sierra AI
           </div>
           <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', maxWidth: 400 }}>
             The agent is pre-fetching all domain data in parallel, then generating a structured intelligence report.

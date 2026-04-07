@@ -1,22 +1,32 @@
 /**
- * agents.service.js
+ * agents.service.js  —  Phase 6 · Agentic AI
  *
- * Phase 6 — Agentic AI
  * Each agent:
- *  1. Pre-fetches all domain data in parallel (deterministic, no LLM tool-calling loop)
- *  2. Passes the full dataset to GPT-4o with a structured-output prompt
- *  3. Returns a typed AgentReport
+ *  1. Pre-fetches all domain data in parallel (deterministic, no tool-calling loop)
+ *  2. Trims large arrays to keep the context window lean
+ *  3. Passes the dataset to the Sierra AI model for structured synthesis
+ *  4. Returns a typed AgentReport
  *
- * Pattern: fetch-all-first → single GPT-4o synthesis → structured JSON
+ * Pattern: fetch-all-first → trim → single AI synthesis call → structured JSON
  */
-import OpenAI          from 'openai';
+import OpenAI            from 'openai';
 import { AGENT_CONFIGS } from './agent.configs.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// ── Trim large arrays so the context window stays under the token limit ──────
+// Keeps the first N rows from every array anywhere in the data tree.
+function trimForAI(val, maxRows = 12) {
+  if (Array.isArray(val))             return val.slice(0, maxRows).map(v => trimForAI(v, maxRows));
+  if (val && typeof val === 'object') return Object.fromEntries(
+    Object.entries(val).map(([k, v]) => [k, trimForAI(v, maxRows)])
+  );
+  return val;
+}
 
 /**
  * runAgent(type)
- * @param {string} type - 'grants' | 'procurement' | 'operations' | 'executive'
+ * @param {string} type  'grants' | 'procurement' | 'operations' | 'executive'
  * @returns {Promise<AgentReport>}
  */
 export async function runAgent(type) {
@@ -25,35 +35,38 @@ export async function runAgent(type) {
 
   const startMs = Date.now();
 
-  // ── 1. Fetch all domain data in parallel ────────────────────────────────────
-  let data;
+  // ── 1. Fetch all domain data in parallel ─────────────────────────────────
+  let raw;
   try {
-    data = await config.fetchData();
+    raw = await config.fetchData();
   } catch (err) {
     throw new Error(`Data fetch failed for ${type} agent: ${err.message}`);
   }
 
-  // ── 2. Build the analysis prompt ────────────────────────────────────────────
-  const analysisPrompt = config.analysisPrompt(data);
+  // ── 2. Trim arrays to control token count ────────────────────────────────
+  const data = trimForAI(raw);
 
-  // ── 3. Call GPT-4o for structured analysis ───────────────────────────────────
-  let raw;
+  // ── 3. Build the analysis prompt ─────────────────────────────────────────
+  const prompt = config.analysisPrompt(data);
+
+  // ── 4. Call Sierra AI for structured analysis ─────────────────────────────
+  let content;
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      temperature: 0.2,      // low temperature → consistent, factual output
+    const completion = await client.chat.completions.create({
+      model:       'gpt-4o-mini',   // higher TPM tier — keeps analysis within rate limits
+      temperature: 0.2,             // low temperature → consistent, factual output
       messages: [
         { role: 'system', content: config.persona },
-        { role: 'user',   content: analysisPrompt },
+        { role: 'user',   content: prompt },
       ],
     });
-    raw = completion.choices[0].message.content || '';
+    content = completion.choices[0].message.content || '';
   } catch (err) {
-    throw new Error(`GPT-4o analysis failed: ${err.message}`);
+    throw new Error(`Sierra AI analysis failed: ${err.message}`);
   }
 
-  // ── 4. Parse structured report ───────────────────────────────────────────────
-  const report = parseReport(raw);
+  // ── 5. Parse structured report ────────────────────────────────────────────
+  const report = parseReport(content);
 
   return {
     agent:      type,
@@ -64,13 +77,13 @@ export async function runAgent(type) {
   };
 }
 
-// ── Parse & validate the GPT-4o response ─────────────────────────────────────
+// ── Parse and validate the AI response ───────────────────────────────────────
 function parseReport(raw) {
   try {
     const clean = raw
       .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/,     '')
+      .replace(/^```\s*/i,     '')
+      .replace(/```\s*$/,      '')
       .trim();
     const parsed = JSON.parse(clean);
 
@@ -83,7 +96,6 @@ function parseReport(raw) {
       sections:         parsed.sections          || [],
     };
   } catch {
-    // Graceful fallback — return raw text wrapped in minimal structure
     return {
       summary:          raw,
       risk_level:       'MEDIUM',

@@ -1,7 +1,7 @@
 /**
- * ai.tools.js — OpenAI function definitions
+ * ai.tools.js — Sierra AI tool definitions
  * Each tool maps directly to an existing service method.
- * GPT-4o reads these descriptions to decide which to call.
+ * Sierra AI reads these descriptions to decide which to call.
  */
 export const TOOLS = [
   {

@@ -4,7 +4,7 @@
  * of the four Phase 6 AI Agents.
  *
  * Each agent fetches its domain data in parallel, then passes the full
- * context to GPT-4o with a structured-output prompt.
+ * context to Sierra AI with a structured-output prompt.
  */
 
 import { GrantsService }      from '../grants/grants.service.js';

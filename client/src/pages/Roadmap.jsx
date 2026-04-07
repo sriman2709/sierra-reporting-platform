@@ -187,7 +187,7 @@ export default function Roadmap() {
             ))}
           </div>
           <div style={{ marginTop: 16, fontSize: 13, color: '#276749' }}>
-            Sierra Intelligence (GPT-4o) can answer cross-domain questions spanning all 11 modules simultaneously.
+            Sierra Intelligence can answer cross-domain questions spanning all 11 modules simultaneously.
             Ask: <em>"What is our full Public Works cost picture?"</em> → budget variance + assets + work orders + inventory + fleet + HR in one query.
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function Roadmap() {
           sub="Node.js ESM API · React/Vite SPA · JWT Auth · RBAC · 46-tool AI · CI/CD to Azure"
           items={['Grants','Funds','Subawards','Outcomes','Audit','Forecast',
                   'Procurement','Finance','Capital Projects','Assets',
-                  'Inventory','HR','Fleet','Sierra AI (GPT-4o)']}
+                  'Inventory','HR','Fleet','Sierra AI']}
         />
         <ArchLayer
           icon="📊" color="#e65100"
