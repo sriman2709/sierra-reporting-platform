@@ -5,7 +5,7 @@ const PHASE_COLORS = {
   phase3:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase4:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
   phase5:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
-  phase6:   { bg: '#fff3e0', border: '#ffcc80', badge: '#e65100', label: 'PHASE 6' },
+  phase6:   { bg: '#f0fff4', border: '#9ae6b4', badge: '#38a169', label: 'LIVE' },
 };
 
 function RoadmapCard({ icon, title, kpis, phase, wide = false }) {
@@ -212,7 +212,7 @@ export default function Roadmap() {
 
       {/* ── Phase 6: AI Agentic ── */}
       <div style={{ marginBottom: 36 }}>
-        <SectionHeader color="#e65100" label="PHASE 6 — AGENTIC AI (ALL DOMAINS)" />
+        <SectionHeader color="#38a169" label="PHASE 6 — AGENTIC AI · LIVE" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
           <RoadmapCard icon="✦" title="Grants AI Agent" phase="phase6" kpis={['Auto-flag compliance anomalies', 'Burn rate projection with LLM', 'Corrective action drafting', 'Reporting narrative generation']} />
           <RoadmapCard icon="✦" title="Procurement AI Agent" phase="phase6" kpis={['Duplicate invoice detection', 'Vendor fraud pattern scoring', 'Contract renewal recommendations', 'Bid price benchmarking']} />

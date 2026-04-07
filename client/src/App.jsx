@@ -22,6 +22,7 @@ import Treasury        from './pages/Treasury';
 import ExecutiveCenter from './pages/ExecutiveCenter';
 import Roadmap         from './pages/Roadmap';
 import Transparency    from './pages/Transparency';
+import AgentHub        from './pages/AgentHub';
 
 const PAGE_TITLES = {
   '/':             'Platform Overview',
@@ -43,6 +44,7 @@ const PAGE_TITLES = {
   '/treasury':           'Treasury & Revenue',
   '/executive':          'Executive Command Center',
   '/roadmap':            'Enterprise Roadmap',
+  '/agents':             'Sierra Agentic AI',
 };
 
 function RequireAuth() {
@@ -78,6 +80,7 @@ export default function App() {
           <Route path="/treasury"         element={<Treasury />} />
           <Route path="/executive"        element={<ExecutiveCenter />} />
           <Route path="/roadmap"          element={<Roadmap />} />
+          <Route path="/agents"           element={<AgentHub />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
