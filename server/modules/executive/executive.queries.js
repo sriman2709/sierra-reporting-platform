@@ -37,7 +37,7 @@ export const Q = {
       (SELECT COUNT(*)
          FROM ${S}."I_CapitalProject"
         WHERE "project_status" = 'ACTIVE')                                     AS "active_projects",
-      (SELECT ROUND(SUM("actual_cost"), 2)
+      (SELECT ROUND(SUM("spent_to_date"), 2)
          FROM ${S}."I_CapitalProject")                                         AS "capital_spend_ytd",
 
       /* Assets */
@@ -67,7 +67,7 @@ export const Q = {
       /* Inventory */
       (SELECT COUNT(*)
          FROM ${S}."I_InventoryItem"
-        WHERE "quantity_on_hand" <= "reorder_point")                           AS "low_stock_items",
+        WHERE "current_stock" <= "reorder_point")                              AS "low_stock_items",
 
       /* Finance — use actuals from BudgetLine (fiscal_year stored as 'FY2026') */
       (SELECT ROUND(SUM("actuals"), 2)
