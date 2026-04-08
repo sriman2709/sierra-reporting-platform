@@ -131,14 +131,14 @@ export default function Dashboard() {
       { label: 'Total Grant Funding',value: fmt$(gk.total_award_amount),      color: '#1a5c9e' },
       { label: 'Fund Balance',      value: fmt$(fk.total_balance),            color: '#38a169' },
       { label: 'Available-to-Spend',value: fmt$(fk.total_available),          color: '#38a169' },
-      { label: 'Cash Position',     value: fmt$(tk.cash_reserves),            color: '#0369a1' },
+      { label: 'Cash Position',     value: fmt$(tk.total_cash_position),      color: '#0369a1' },
     ],
     [
-      { label: 'Active Contracts',  value: fmtN(pk.active_contracts),         color: '#7c3aed' },
+      { label: 'Active Contracts',  value: fmtN(pk.total_contracts),          color: '#7c3aed' },
       { label: 'Capital Projects',  value: fmtN(ck.active_projects),          color: '#c05621' },
-      { label: 'Active Employees',  value: fmtN(hk.active_employees),         color: '#b7791f' },
+      { label: 'Active Employees',  value: fmtN(hk.total_employees),          color: '#b7791f' },
       { label: 'Fleet Vehicles',    value: fmtN(flk.total_vehicles),          color: '#2d3748' },
-      { label: 'Stock Alerts',      value: fmtN(ik.out_of_stock_count),       color: '#e53e3e' },
+      { label: 'Stock Alerts',      value: fmtN(ik.out_of_stock),             color: '#e53e3e' },
     ],
   ];
 
