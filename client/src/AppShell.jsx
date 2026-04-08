@@ -89,8 +89,8 @@ export default function AppShell({ pageTitle }) {
               style={{
                 width: 34, height: 34,
                 borderRadius: 8,
-                background: 'rgba(255,255,255,0.15)',
-                border: '1.5px solid rgba(255,255,255,0.25)',
+                background: '#1a5c9e',
+                border: '1.5px solid #1a5c9e',
                 color: '#fff',
                 fontSize: 15, fontWeight: 700,
                 cursor: 'pointer',
@@ -98,8 +98,8 @@ export default function AppShell({ pageTitle }) {
                 transition: 'background 0.15s',
                 flexShrink: 0,
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.28)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+              onMouseEnter={e => e.currentTarget.style.background = '#154a80'}
+              onMouseLeave={e => e.currentTarget.style.background = '#1a5c9e'}
             >?</button>
           </div>
         </header>
