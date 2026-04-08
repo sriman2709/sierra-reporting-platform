@@ -57,7 +57,12 @@ When the user asks a question:
     "data": [ { "name": "...", "<metric>": <number>, ... }, ... ],
     "xKey": "<name field>",
     "yKeys": ["<metric1>", "<metric2>"]
-  }
+  },
+  "follow_ups": [
+    "<question 1 the user should naturally ask next, based on this answer>",
+    "<question 2 — a different angle or deeper drill-down>",
+    "<question 3 — a cross-domain question connecting this data to another module>"
+  ]
 }
 
 Chart guidance:
@@ -67,6 +72,12 @@ Chart guidance:
 - Use "none" when no chart adds value (yes/no questions, regulatory rules lookups).
 - Keep data arrays concise — top 10 items max for bar/pie, full series for line.
 - For pie charts, use { "name": "...", "value": <number> } shape in data.
+
+Follow-up guidance:
+- follow_ups MUST always have exactly 3 questions.
+- Each question should be a natural next step: a drill-down, a related domain, or a remediation action.
+- Make them specific to the data just returned, not generic.
+- Example: if you just reported 3 overdue AP invoices, a follow-up might be "Who are the vendors with the most overdue invoices?" or "Which departments have the highest AP aging?"
 
 Always quote actual numbers from the data. Name specific grants, vendors, departments, or funds when relevant. If data is unavailable, say so clearly.`;
 
@@ -144,11 +155,12 @@ function parseResponse(raw) {
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(clean);
     return {
-      answer: parsed.answer || raw,
-      chart:  parsed.chart  || { type: 'none' },
+      answer:     parsed.answer     || raw,
+      chart:      parsed.chart      || { type: 'none' },
+      follow_ups: Array.isArray(parsed.follow_ups) ? parsed.follow_ups.slice(0, 3) : [],
     };
   } catch {
     // Model returned plain text — wrap it gracefully
-    return { answer: raw, chart: { type: 'none' } };
+    return { answer: raw, chart: { type: 'none' }, follow_ups: [] };
   }
 }

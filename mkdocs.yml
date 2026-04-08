@@ -1,0 +1,81 @@
+site_name: Sierra SLED Enterprise Intelligence Platform
+site_description: Comprehensive guide to the Sierra SLED public-sector reporting platform
+site_author: Sierra Digital Inc.
+site_url: https://sriman2709.github.io/sierra-reporting-platform
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - toc.follow
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/sriman2709/sierra-reporting-platform
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview & Login: getting-started.md
+    - User Roles & Access: roles.md
+  - Financial Management:
+    - Grants Management: modules/grants.md
+    - Fund Accounting: modules/funds.md
+    - Finance Controller: modules/finance.md
+    - Procurement & AP: modules/procurement.md
+    - Treasury & Revenue: modules/treasury.md
+    - Financial Forecast: modules/forecast.md
+  - Program & Compliance:
+    - Subaward & Compliance: modules/subawards.md
+    - Outcome Metrics: modules/outcomes.md
+    - Audit Readiness: modules/audit.md
+  - Enterprise Operations:
+    - Capital Projects & CIP: modules/capital-projects.md
+    - Assets & Maintenance: modules/assets.md
+    - Inventory & Warehouse: modules/inventory.md
+  - Workforce & Fleet:
+    - HR & Workforce: modules/hr.md
+    - Fleet Management: modules/fleet.md
+  - Executive & Cross-Domain:
+    - Executive Command Center: modules/executive.md
+    - Dashboard Overview: modules/dashboard.md
+  - Sierra AI:
+    - Sierra Intelligence (Chat): ai/sierra-intelligence.md
+    - Agent Hub: ai/agent-hub.md
+  - Public Transparency Portal: transparency.md
+  - Administration:
+    - Deployment Guide: admin/deployment.md
+    - Datasphere & HANA Guide: admin/datasphere.md

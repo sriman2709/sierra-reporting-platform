@@ -9,27 +9,46 @@ const token   = () => localStorage.getItem('token');
 
 const COLORS = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
 
+// ── Suggested opening prompts — covers all 14 domains ─────────────────────
 const SUGGESTED = [
-  'Which grants are at risk of expiring soon?',
-  'Show me the compliance posture for all grants.',
-  'Which funds are over budget?',
-  'What is the grant burn rate across the portfolio?',
-  'Which programs are most cost-effective?',
-  'Show me outcome trend data over time.',
-  'Which subrecipients are high risk?',
-  'Run a sensitivity analysis on all funds.',
+  // Finance & Grants
+  'Which grants are at risk of expiring in the next 90 days?',
+  'Show me compliance posture and burn rate for all grants.',
+  'Which funds are over budget or critically low on available balance?',
+  'Run a budget variance analysis by department.',
+  // Procurement & Treasury
+  'Which contracts are expiring in the next 60 days?',
+  'Which vendors have the highest risk scores?',
+  'What is the AP aging situation — how much is overdue?',
+  'Show me our current cash position and upcoming debt service payments.',
+  // Operations
+  'Which capital projects are delayed or at risk?',
+  'Show me assets with critical condition ratings and open emergency work orders.',
+  'Which inventory items are out of stock or critically low across all warehouses?',
+  // Workforce & Fleet
+  'What is our vacancy rate and how many positions are unfilled?',
+  'Which vehicles are out of service or overdue for inspection?',
+  'What is fleet fuel cost by department this fiscal year?',
+  // Cross-domain
+  'What are our biggest operational risks across all domains this month?',
+  'Show me the full cost picture for Public Works — budget, assets, fleet, and staff.',
+  'How much are we spending on grant-funded employees?',
+  'Which departments are over budget AND have critical asset failures?',
 ];
 
+// Rotate SUGGESTED — show 8 at a time, starting from a random offset
+const INITIAL_SHOWN = (() => {
+  const start = Math.floor(Math.random() * (SUGGESTED.length - 8));
+  return SUGGESTED.slice(start, start + 8);
+})();
+
+// ── Chart renderer ─────────────────────────────────────────────────────────
 function ChartBlock({ chart }) {
   if (!chart || chart.type === 'none') return null;
-
   const { type, title, data, xKey, yKeys } = chart;
-
   return (
     <div style={{ marginTop: 16, background: '#f8fafc', borderRadius: 10, padding: '16px 8px' }}>
-      <p style={{ fontWeight: 600, fontSize: 13, color: '#334155', marginBottom: 10, paddingLeft: 8 }}>
-        {title}
-      </p>
+      <p style={{ fontWeight: 600, fontSize: 13, color: '#334155', marginBottom: 10, paddingLeft: 8 }}>{title}</p>
       <ResponsiveContainer width="100%" height={260}>
         {type === 'bar' ? (
           <BarChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
@@ -55,7 +74,8 @@ function ChartBlock({ chart }) {
           </LineChart>
         ) : type === 'pie' ? (
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+            <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
               {(data || []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip contentStyle={{ fontSize: 12 }} />
@@ -66,7 +86,54 @@ function ChartBlock({ chart }) {
   );
 }
 
-function Message({ msg }) {
+// ── Follow-up suggestion chips ─────────────────────────────────────────────
+function FollowUps({ followUps, onAsk, disabled }) {
+  if (!followUps?.length) return null;
+  return (
+    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed #e2e8f0' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: 0.8, marginBottom: 6, textTransform: 'uppercase' }}>
+        Continue exploring ↓
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {followUps.map((q, i) => (
+          <button
+            key={i}
+            onClick={() => !disabled && onAsk(q)}
+            disabled={disabled}
+            style={{
+              background: disabled ? '#f8fafc' : '#f0f7ff',
+              border: `1px solid ${disabled ? '#e2e8f0' : '#bfdbfe'}`,
+              borderRadius: 8, padding: '7px 12px',
+              fontSize: 12, color: disabled ? '#94a3b8' : '#1d4ed8',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              textAlign: 'left', fontWeight: 500,
+              transition: 'all 0.15s',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}
+            onMouseEnter={e => {
+              if (!disabled) {
+                e.currentTarget.style.background = '#dbeafe';
+                e.currentTarget.style.borderColor = '#93c5fd';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!disabled) {
+                e.currentTarget.style.background = '#f0f7ff';
+                e.currentTarget.style.borderColor = '#bfdbfe';
+              }
+            }}
+          >
+            <span style={{ color: '#3b82f6', flexShrink: 0, fontSize: 11 }}>›</span>
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Message bubble ─────────────────────────────────────────────────────────
+function Message({ msg, onAsk, isLatestAssistant, loading }) {
   const isUser = msg.role === 'user';
   return (
     <div style={{
@@ -76,7 +143,6 @@ function Message({ msg }) {
       gap: 10,
       marginBottom: 18,
     }}>
-      {/* Avatar */}
       <div style={{
         width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
         background: isUser ? '#2563eb' : '#1e293b',
@@ -86,19 +152,23 @@ function Message({ msg }) {
         {isUser ? '👤' : '✦'}
       </div>
 
-      {/* Bubble */}
-      <div style={{
-        maxWidth: '78%',
-        background: isUser ? '#2563eb' : '#fff',
-        color: isUser ? '#fff' : '#1e293b',
-        borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-        padding: '12px 16px',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-        lineHeight: 1.6,
-        fontSize: 14,
-      }}>
-        {msg.content}
-        {msg.chart && <ChartBlock chart={msg.chart} />}
+      <div style={{ maxWidth: '78%' }}>
+        <div style={{
+          background: isUser ? '#2563eb' : '#fff',
+          color: isUser ? '#fff' : '#1e293b',
+          borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+          padding: '12px 16px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+          lineHeight: 1.6,
+          fontSize: 14,
+        }}>
+          {msg.content}
+          {msg.chart && <ChartBlock chart={msg.chart} />}
+          {/* Show follow-ups only on latest assistant message and when not loading */}
+          {!isUser && isLatestAssistant && !loading && msg.follow_ups?.length > 0 && (
+            <FollowUps followUps={msg.follow_ups} onAsk={onAsk} disabled={loading} />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -111,7 +181,7 @@ function TypingIndicator() {
         width: 34, height: 34, borderRadius: '50%',
         background: '#1e293b',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 14, color: '#fff', fontWeight: 700,
+        fontSize: 14, color: '#fff',
       }}>✦</div>
       <div style={{
         background: '#fff', borderRadius: '18px 18px 18px 4px',
@@ -130,15 +200,17 @@ function TypingIndicator() {
   );
 }
 
+// ── Main AIChat ─────────────────────────────────────────────────────────────
 export default function AIChat() {
   const [messages, setMessages] = useState([{
-    role: 'assistant',
-    content: 'Hello! I\'m Sierra Intelligence — your AI analyst for this platform. I have live access to grants, fund accounting, compliance, outcomes, and forecast data from SAP HANA Cloud. Ask me anything.',
-    chart: null,
+    role:       'assistant',
+    content:    'Hello! I\'m Sierra Intelligence — your AI analyst for the full platform. I have live access to all 14 modules: Grants, Funds, Finance, Procurement, Treasury, Subawards, Outcomes, Audit, Capital Projects, Assets, Inventory, HR, Fleet, and Forecasting — all from SAP HANA Cloud. Ask me anything across any domain.',
+    chart:      null,
+    follow_ups: [],
   }]);
   const [input, setInput]     = useState('');
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+  const bottomRef             = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -149,7 +221,7 @@ export default function AIChat() {
     if (!q || loading) return;
 
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: q, chart: null }]);
+    setMessages(prev => [...prev, { role: 'user', content: q, chart: null, follow_ups: [] }]);
     setLoading(true);
 
     try {
@@ -164,15 +236,17 @@ export default function AIChat() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.answer,
-        chart: data.chart?.type !== 'none' ? data.chart : null,
+        role:       'assistant',
+        content:    data.answer,
+        chart:      data.chart?.type !== 'none' ? data.chart : null,
+        follow_ups: data.follow_ups || [],
       }]);
     } catch (err) {
       setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Sorry, I ran into an error: ${err.message}`,
-        chart: null,
+        role:       'assistant',
+        content:    `Sorry, I ran into an error: ${err.message}`,
+        chart:      null,
+        follow_ups: [],
       }]);
     } finally {
       setLoading(false);
@@ -182,6 +256,11 @@ export default function AIChat() {
   function onKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   }
+
+  // Index of the latest assistant message (for follow-up placement)
+  const latestAssistantIdx = messages.reduce(
+    (last, m, i) => m.role === 'assistant' ? i : last, -1
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', maxWidth: 900, margin: '0 auto' }}>
@@ -198,22 +277,29 @@ export default function AIChat() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 22,
         }}>✦</div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ margin: 0, color: '#fff', fontSize: 18, fontWeight: 700 }}>Sierra Intelligence</h2>
           <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
-            AI Analyst · Live SAP HANA Cloud data · Powered by Sierra AI
+            AI Analyst · Live SAP HANA Cloud data · 14 modules · Powered by Sierra AI
           </p>
+        </div>
+        <div style={{
+          background: 'rgba(255,255,255,0.12)', borderRadius: 8,
+          padding: '6px 14px', fontSize: 11, color: 'rgba(255,255,255,0.85)',
+          fontWeight: 600,
+        }}>
+          46 tools · All domains
         </div>
       </div>
 
-      {/* Suggested prompts (only show when first message is still only one) */}
+      {/* Opening suggested prompts (only before first user message) */}
       {messages.length === 1 && (
         <div style={{ marginBottom: 16 }}>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Try asking…
+          <p style={{ fontSize: 11, color: '#64748b', marginBottom: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Try asking across any domain…
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {SUGGESTED.map(s => (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {INITIAL_SHOWN.map(s => (
               <button
                 key={s}
                 onClick={() => send(s)}
@@ -238,7 +324,15 @@ export default function AIChat() {
         flex: 1, overflowY: 'auto', paddingRight: 4,
         scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent',
       }}>
-        {messages.map((m, i) => <Message key={i} msg={m} />)}
+        {messages.map((m, i) => (
+          <Message
+            key={i}
+            msg={m}
+            onAsk={send}
+            isLatestAssistant={i === latestAssistantIdx}
+            loading={loading}
+          />
+        ))}
         {loading && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
@@ -254,7 +348,7 @@ export default function AIChat() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={onKey}
-          placeholder="Ask anything about grants, funds, compliance, outcomes, or forecasts…"
+          placeholder="Ask anything about grants, funds, procurement, assets, HR, fleet, treasury, outcomes…"
           rows={1}
           disabled={loading}
           style={{
@@ -279,16 +373,13 @@ export default function AIChat() {
             color: loading || !input.trim() ? '#94a3b8' : '#fff',
             fontSize: 16, flexShrink: 0, transition: 'all 0.15s',
           }}
-        >
-          ➤
-        </button>
+        >➤</button>
       </div>
 
       <p style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-        Press Enter to send · Shift+Enter for new line · Answers use live HANA data
+        Enter to send · Shift+Enter for new line · Follow-up suggestions appear after each answer
       </p>
 
-      {/* CSS for bounce animation */}
       <style>{`
         @keyframes bounce {
           0%, 80%, 100% { transform: scale(0); }
