@@ -1,7 +1,7 @@
 # Sierra SLED Enterprise Intelligence Platform — Claude Context & Memory
 
-> **Last updated:** April 7, 2026
-> **Status:** All 6 phases complete and live
+> **Last updated:** April 8, 2026
+> **Status:** All 6 phases + Help Centre + MkDocs docs live
 > **Purpose:** Continuity document for Claude sessions — read this first when resuming work
 
 ---
@@ -204,8 +204,9 @@ Seed is protected by `x-seed-secret: sierra-phase4-seed-446357eb76ed22e8` header
 - **Model:** `gpt-4o-mini` (referred to as "Sierra AI" — no OpenAI/GPT branding in UI)
 - **46 tools** defined in `server/modules/ai/ai.tools.js`
 - **TOOL_EXECUTORS** map tool names → direct service method calls (no HTTP)
-- Flow: question → Sierra AI picks tools → parallel execution → Sierra AI synthesises → `{ answer, chart }`
-- Response format: `{ answer: string, chart: { type, title, data, xKey, yKeys } }`
+- Flow: question → Sierra AI picks tools → parallel execution → Sierra AI synthesises → `{ answer, chart, follow_ups }`
+- Response format: `{ answer: string, chart: { type, title, data, xKey, yKeys }, follow_ups: string[] }`
+- **Follow-up suggestions:** Sierra AI returns 3 contextual follow-up questions in the same response (zero extra API calls). Displayed as clickable chips below the latest assistant message in `AIChat.jsx`. Replace on every new answer.
 
 ---
 
@@ -225,10 +226,24 @@ client/src/
     Treasury.jsx / ExecutiveCenter.jsx
     Transparency.jsx     ← PUBLIC, no auth, no AppShell
     AgentHub.jsx         ← Phase 6 agents
-    AIChat.jsx           ← Sierra Intelligence chat
+    AIChat.jsx           ← Sierra Intelligence chat + recursive follow-up chips
     Roadmap.jsx          ← All phases marked LIVE
     SACGuide.jsx
+    Help.jsx             ← /help — full Help Centre (3 tabs: Modules | Sierra AI | Glossary)
+  components/
+    HelpDrawer.jsx       ← Contextual slide-over triggered by ? button; auto-detects route
+    helpContent.js       ← Single source of truth for all help content (19 routes + glossary)
 ```
+
+**? Help button (AppShell.jsx top-bar):**
+- Solid Sierra blue (`#1a5c9e`) button with white `?` — visible on white top-bar
+- Opens `HelpDrawer` which reads `useLocation()` and shows content for the current module
+- HelpDrawer has: module tabs list, amber tip cards, blue Sierra AI example chips, link to /help
+
+**Help Centre (/help):**
+- 3 tabs: Modules (all 14 domains) | Sierra AI (24 curated prompts, 6 categories) | Glossary (20 terms)
+- Live search filters across all content
+- Expandable module cards per section
 
 **Route configuration (App.jsx):**
 - `/transparency` is OUTSIDE `<RequireAuth>` — public route
@@ -268,7 +283,18 @@ git push origin main
 
 ---
 
-## 10. Regression Scripts
+## 10. MkDocs Documentation
+
+- **Config:** `mkdocs.yml` (root) — Material theme, full nav structure
+- **Content:** `docs/` — getting-started, all module pages, roles, AI guide, transparency, admin
+- **Auto-deploy:** `.github/workflows/docs.yml` — triggers on push to `docs/**` or `mkdocs.yml`
+- **Live URL:** `https://sriman2709.github.io/sierra-reporting-platform/`
+- **GitHub Pages:** Settings → Pages → Branch: `gh-pages` · / (root)
+- **Note:** `mkdocs gh-deploy --force` in the workflow creates/updates the `gh-pages` branch automatically. To trigger manually: `gh workflow run docs.yml --ref main`
+
+---
+
+## 11. Regression Scripts
 
 | Script | What it tests |
 |---|---|
@@ -283,7 +309,7 @@ BASE_URL=https://public-sector-reporting.azurewebsites.net bash scripts/regressi
 
 ---
 
-## 11. Known Issues & Decisions
+## 12. Known Issues & Decisions
 
 - **HANA IPv6 restriction:** Local machine (IPv6) cannot connect to HANA Cloud directly. Seeding is done via the protected HTTP seed endpoint called from Azure.
 - **gpt-4o-mini used throughout:** The org's `gpt-4o` TPM limit is 30k. `gpt-4o-mini` has 200k TPM. All AI calls use `gpt-4o-mini`. Referred to as "Sierra AI" in the UI — no OpenAI/GPT branding anywhere.
@@ -293,7 +319,7 @@ BASE_URL=https://public-sector-reporting.azurewebsites.net bash scripts/regressi
 
 ---
 
-## 12. Datasphere / HANA Handoff for Kavi Team
+## 13. Datasphere / HANA Handoff for Kavi Team
 
 Work remaining in Datasphere (not yet done):
 1. Create Analytical Dataset views (`V_*`) on top of `I_*` tables for BI consumption
@@ -311,20 +337,25 @@ Connection details for Datasphere team:
 
 ---
 
-## 13. Git Commit History (Phase 4 onwards)
+## 14. Git Commit History (Phase 4 onwards)
 
 ```
+33ce97b  Fix ? help button visibility — solid sierra-blue on white top-bar
+8f82af2  ci: add GitHub Actions workflow to auto-deploy MkDocs to GitHub Pages
+ed246f5  Sprint 21: In-app Help Centre + contextual ? drawer for all 14 modules
+abb277a  Fix Dashboard KPI field name mismatches — 4 blank tiles
+698212a  Sprint 20: Dashboard all-14-modules, Sierra AI follow-ups, MkDocs documentation
+98254a0  docs: add CLAUDE_CONTEXT.md
 cccc386  Fix: switch to gpt-4o-mini + trim data + remove AI branding references
 806a5f9  Sprint 19: Phase 6 — Agentic AI (4 agents + Agent Hub)
 2821d9b  Sprint 18: Phase 5 — Public Transparency Portal
 3ba49d2  Fix Phase 4 executive KPIs — remaining HANA column corrections
-a8653ac  Fix Phase 4 executive queries — HANA column names
 3416608  Sprint 16+17: Phase 4 — Treasury & Revenue + Executive Command Center
 ```
 
 ---
 
-## 14. What's Next (Future Phases — Not Started)
+## 15. What's Next (Future Phases — Not Started)
 
 - **Scheduled Briefings:** Email/Teams delivery of Executive AI Briefing on a schedule
 - **Agent Actions:** Agents that can write back to HANA (flag alerts, create work orders, draft reports)
