@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getUser, logout } from './auth';
+import HelpDrawer from './components/HelpDrawer';
 
 const NAV = [
   { to: '/',             label: 'Dashboard',             icon: '⊞'  },
@@ -28,6 +30,7 @@ const NAV = [
   { section: 'Phase 5 · Public Transparency' },
   { to: '/transparency', label: 'Public Portal',         icon: '🌐' },
   { section: 'Resources' },
+  { to: '/help',         label: 'Help Centre',           icon: '❓' },
   { to: '/guide',        label: 'SAC Dev Guide',         icon: '📖' },
   { to: '/roadmap',      label: 'Roadmap',               icon: '🗺', roadmap: true },
 ];
@@ -35,6 +38,7 @@ const NAV = [
 export default function AppShell({ pageTitle }) {
   const user = getUser();
   const navigate = useNavigate();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   function handleLogout() {
     logout();
@@ -75,12 +79,37 @@ export default function AppShell({ pageTitle }) {
       <div className="main-area">
         <header className="top-bar">
           <h1>{pageTitle || 'Dashboard'}</h1>
-          <span className="top-bar-badge">HANA Cloud Live</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="top-bar-badge">HANA Cloud Live</span>
+
+            {/* Contextual help button */}
+            <button
+              onClick={() => setHelpOpen(true)}
+              title="Help for this page"
+              style={{
+                width: 34, height: 34,
+                borderRadius: 8,
+                background: 'rgba(255,255,255,0.15)',
+                border: '1.5px solid rgba(255,255,255,0.25)',
+                color: '#fff',
+                fontSize: 15, fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.28)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            >?</button>
+          </div>
         </header>
         <main className="page-content">
           <Outlet />
         </main>
       </div>
+
+      {/* Contextual help drawer — knows the current route via useLocation inside */}
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
